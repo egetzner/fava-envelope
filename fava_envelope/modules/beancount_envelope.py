@@ -28,7 +28,7 @@ class BeancountEnvelope:
         self.entries = entries
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
-        self.start_date, self.budget_accounts, self.mappings = self._find_envelop_settings()
+        self.start_date, self.end_date, self.budget_accounts, self.mappings = self._find_envelop_settings()
 
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
@@ -36,10 +36,10 @@ class BeancountEnvelope:
         # Compute start of period
         # TODO get start date from journal
         today = datetime.date.today()
-        self.date_start = datetime.date(2020,1,1)
+        self.date_start = datetime.date(today.year,1,1) if self.start_date is None else datetime.datetime.strptime(self.start_date, '%Y-%m').date()
 
         # Compute end of period
-        self.date_end = datetime.date(today.year, today.month, today.day)
+        self.date_end = datetime.date(today.year, today.month, today.day) if self.end_date is None else datetime.datetime.strptime(self.end_date, '%Y-%m').date()
 
         self.price_map = prices.build_price_map(entries)
         self.acctypes = options.get_account_types(options_map)
@@ -58,6 +58,7 @@ class BeancountEnvelope:
 
     def _find_envelop_settings(self):
         start_date = None
+        end_date = None
         budget_accounts= []
         mappings = []
 
@@ -65,6 +66,8 @@ class BeancountEnvelope:
             if isinstance(e, Custom) and e.type == "envelope":
                 if e.values[0].value == "start date":
                     start_date = e.values[1].value
+                if e.values[0].value == "end date":
+                    end_date = e.values[1].value
                 if e.values[0].value == "budget account":
                     budget_accounts.append(re.compile(e.values[1].value))
                 if e.values[0].value == "mapping":
@@ -73,13 +76,13 @@ class BeancountEnvelope:
                         e.values[2].value
                     )
                     mappings.append(map_set)
-        return start_date, budget_accounts, mappings
+        return start_date, end_date, budget_accounts, mappings
 
     def envelope_tables(self):
 
         months = []
         date_current = self.date_start
-        while date_current < self.date_end:
+        while date_current <= self.date_end:
             months.append(f"{date_current.year}-{str(date_current.month).zfill(2)}")
             month = date_current.month - 1 + 1
             year = date_current.year + month // 12
