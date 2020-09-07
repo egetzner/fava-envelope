@@ -21,11 +21,15 @@ from beancount.query import query
 from beancount.core.data import Custom
 from beancount.parser import options
 
+BudgetError = collections.namedtuple('BudgetError', 'source message entry')
+
+
 class BeancountEnvelope:
 
-    def __init__(self, entries, options_map):
+    def __init__(self, entries, errors, options_map):
 
         self.entries = entries
+        self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
         self.start_date, self.end_date, self.budget_accounts, self.mappings = self._find_envelop_settings()
@@ -36,10 +40,12 @@ class BeancountEnvelope:
         # Compute start of period
         # TODO get start date from journal
         today = datetime.date.today()
+        self.today = today
         self.date_start = datetime.date(today.year,1,1) if self.start_date is None else datetime.datetime.strptime(self.start_date, '%Y-%m').date()
 
         # Compute end of period
         self.date_end = datetime.date(today.year, today.month, today.day) if self.end_date is None else datetime.datetime.strptime(self.end_date, '%Y-%m').date()
+
 
         self.price_map = prices.build_price_map(entries)
         self.acctypes = options.get_account_types(options_map)
@@ -76,18 +82,29 @@ class BeancountEnvelope:
                         e.values[2].value
                     )
                     mappings.append(map_set)
+
+        if len(budget_accounts) == 0:
+            self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
+
         return start_date, end_date, budget_accounts, mappings
 
     def envelope_tables(self):
 
         months = []
         date_current = self.date_start
+        self.current_month = None
+
         while date_current <= self.date_end:
             months.append(f"{date_current.year}-{str(date_current.month).zfill(2)}")
+            if date_current.year == self.today.year and date_current.month == self.today.month:
+                self.current_month = months[-1]
             month = date_current.month - 1 + 1
             year = date_current.year + month // 12
-            month = month % 12  + 1
+            month = month % 12 + 1
             date_current = datetime.date(year, month,1)
+
+        if self.current_month is None:
+            self.current_month = months[-1]
 
         # Create Income DataFrame
         column_index = pd.MultiIndex.from_product([months], names=['Month'])
@@ -169,7 +186,7 @@ class BeancountEnvelope:
         for index, month in enumerate(months):
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
-        return self.income_df, self.envelope_df
+        return self.income_df, self.envelope_df, self.current_month
 
     def _calculate_budget_activity(self):
 

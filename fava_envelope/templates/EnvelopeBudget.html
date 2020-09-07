@@ -2,10 +2,7 @@
 
 <i>Envelope Budget</i>
 
-{% set month = request.args.get('month') %}
-{% if month == None%}
-{% set month = extension.get_budgets_months_available()[-1] %}
-{% endif %}
+{% set month = extension.get_current_month(request.args.get('month')) %}
 <div class="headerline">
   {% for m in extension.get_budgets_months_available() %}
   <h3><b>{% if not (module == m) %}<a href="{{ url_for_current(month=m) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
