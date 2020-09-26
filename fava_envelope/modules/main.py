@@ -20,9 +20,15 @@ def main():
     # Read beancount input file
     entries, errors, options_map = loader.load_file(args.filename)
     ext = BeancountEnvelope(entries, errors, options_map)
-    df1, df2, cm, accounts = ext.envelope_tables()
+    df1, df2, cm, accounts, actual_spent = ext.envelope_tables()
+
+    for r in accounts:
+        logging.info(r)
 
     logging.info(cm)
+
+    logging.info(actual_spent)
+
     if len(errors) == 0:
         logging.debug('no errors found')
 

@@ -5,10 +5,10 @@ except ImportError:
     pass
 
 import datetime
+import traceback
 import collections
 import logging
 import pandas as pd
-import numpy as np
 import re
 from dateutil.relativedelta import relativedelta
 
@@ -17,25 +17,145 @@ from beancount.core import data
 from beancount.core import prices
 from beancount.core import convert
 from beancount.core import inventory
-from beancount.core import account_types
+from beancount.core import account_types, account
 from beancount.query import query
 from beancount.core.data import Custom
 from beancount.parser import options
 
-from beancount.core.realization import RealAccount, get_or_create
+from beancount.core.realization import RealAccount#, get_or_create
+
+from fava.core.budgets import parse_budgets, calculate_budget_children, calculate_budget
 
 BudgetError = collections.namedtuple('BudgetError', 'source message entry')
+
+class Bucket(dict):
+
+    __slots__ = ('account', 'balance')
+
+    def __init__(self, account_name, *args, **kwargs):
+        """Create a RealAccount instance.
+
+        Args:
+          account_name: a string, the name of the account. Maybe not be None.
+        """
+        super().__init__(*args, **kwargs)
+        assert isinstance(account_name, str)
+        self.account = account_name
+        self.balance = inventory.Inventory()
+
+    def __eq__(self, other):
+        """Equality predicate. All attributes are compared.
+
+        Args:
+          other: Another instance of RealAccount.
+        Returns:
+          A boolean, True if the two real accounts are equal.
+        """
+        return (dict.__eq__(self, other) and
+                self.account == other.account)
+
+    def __ne__(self, other):
+        """Not-equality predicate. See __eq__.
+
+        Args:
+          other: Another instance of RealAccount.
+        Returns:
+          A boolean, True if the two real accounts are not equal.
+        """
+        return not self.__eq__(other)
+
+
+    def __setitem__(self, key, value):
+        """Prevent the setting of non-string or non-empty keys on this dict.
+
+        Args:
+          key: The dictionary key. Must be a string.
+          value: The value, must be a RealAccount instance.
+        Raises:
+          KeyError: If the key is not a string, or is invalid.
+          ValueError: If the value is not a RealAccount instance.
+        """
+        if not isinstance(key, str) or not key:
+            raise KeyError("Invalid Bucket key: '{}'".format(key))
+        if not isinstance(value, Bucket):
+            raise ValueError("Invalid Bucket value: '{}'".format(value))
+        if not value.account.endswith(key):
+            raise ValueError("Bucket name '{}' inconsistent with key: '{}'".format(
+                value.account, key))
+        return super().__setitem__(key, value)
+
+
+def get(real_account, account_name, default=None):
+    """Fetch the subaccount name from the real_account node.
+
+    Args:
+      real_account: An instance of RealAccount, the parent node to look for
+        children of.
+      account_name: A string, the name of a possibly indirect child leaf
+        found down the tree of 'real_account' nodes.
+      default: The default value that should be returned if the child
+        subaccount is not found.
+    Returns:
+      A RealAccount instance for the child, or the default value, if the child
+      is not found.
+    """
+    if not isinstance(account_name, str):
+        raise ValueError
+    components = account.split(account_name)
+    for component in components:
+        real_child = real_account.get(component, default)
+        if real_child is default:
+            return default
+        real_account = real_child
+    return real_account
+
+
+def get_or_create_with_hierarchy(real_account, account_name):
+    """Fetch the subaccount name from the real_account node.
+
+    Args:
+      real_account: An instance of RealAccount, the parent node to look for
+        children of, or create under.
+      account_name: A string, the name of the direct or indirect child leaf
+        to get or create.
+    Returns:
+      A RealAccount instance for the child, or the default value, if the child
+      is not found.
+    """
+    if not isinstance(account_name, str):
+        raise ValueError
+    components = account.split(account_name)
+    path = []
+    for component in components:
+        path.append(component)
+        real_child = real_account.get(component, None)
+        if real_child is None:
+            real_child = Bucket(account.join(*path))
+            real_account[component] = real_child
+        real_account = real_child
+    return real_account
+
+
+def get_or_create(bucket, real_account_name):
+    if not isinstance(real_account_name, str):
+        raise ValueError
+    real_child = bucket.get(real_account_name, None)
+    if real_child is None:
+        real_child = Bucket(real_account_name)
+        bucket[real_account_name] = real_child
+    return real_child
 
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, errors, options_map, start_date=None, future_months=0, future_rollover=False):
+    def __init__(self, entries, errors, options_map, start_date=None, future_months=0, future_rollover=False, show_real_accounts=True):
 
         self.entries = entries
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
         self.budget_accounts, self.mappings = self._find_envelop_settings()
+        self.show_real_accounts = show_real_accounts
 
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
@@ -86,6 +206,18 @@ class BeancountEnvelope:
 
         return budget_accounts, mappings
 
+    def fava_entries(self):
+        return self.parse_entries_by_fava(self.entries, self.date_start, self.date_end)
+
+    def parse_entries_by_fava(self, entries, start_date, end_date, account='Expenses'):
+        custom = [e for e in entries if isinstance(e, Custom)]
+        budgets, errors = parse_budgets(custom)
+        calculate_budget(budgets, account, start_date, end_date)
+
+        bc = calculate_budget_children(budgets, account, start_date, end_date)
+        #logging.info(bc)
+        return bc
+
     def envelope_tables(self):
 
         months = []
@@ -113,7 +245,7 @@ class BeancountEnvelope:
         self.envelope_df = pd.DataFrame(columns=column_index)
         self.envelope_df.index.name = "Envelopes"
 
-        self._calculate_budget_activity()
+        self.actual_spent, buckets = self._calculate_budget_activity()
         self._calc_budget_budgeted()
 
         # Calculate Starting Balance Income
@@ -187,21 +319,30 @@ class BeancountEnvelope:
         for index, month in enumerate(months):
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
-        self.accounts = self._get_accounts(self.envelope_df.index)
-        return self.income_df, self.envelope_df, self.current_month, self.accounts
+        self.accounts = self._get_accounts(self.envelope_df.index, buckets)
+        self.actual_spent.columns = months
+        return self.income_df, self.envelope_df, self.current_month, self.accounts, self.actual_spent
 
 
-    def _get_accounts(self, names):
-        roots = {}
-        for name in names:
-            root_name = name.split(':')[0]
-            root = roots.get(root_name) if root_name in roots else RealAccount(root_name)
-            get_or_create(root, name)
-            roots[root_name] = root
-        return list(roots.values())
+    def _get_accounts(self, names, buckets):
+
+        try:
+            roots = {}
+            for name in names:
+                root_name = name.split(':')[0]
+                root = roots.get(root_name) if root_name in roots else Bucket(root_name)
+                bucket = get_or_create_with_hierarchy(root, name)
+                contained_accounts = buckets.get(name)
+                if self.show_real_accounts and contained_accounts is not None:
+                    for account in contained_accounts:
+                        get_or_create(bucket, account)
+                roots[root_name] = root
+            return list(roots.values())
+        except:
+            logging.error(traceback.formatexc())
 
 
-    def _calculate_budget_activity(self):
+    def _get_balances(self):
 
         # Accumulate expenses for the period
         balances = collections.defaultdict(
@@ -216,7 +357,7 @@ class BeancountEnvelope:
 
             month = (entry.date.year, entry.date.month)
             # TODO domwe handle no transaction in a month?
-            all_months.add(month);
+            all_months.add(month)
 
             # TODO
             contains_budget_accounts = False
@@ -231,10 +372,10 @@ class BeancountEnvelope:
             for posting in entry.postings:
 
                 account = posting.account
-                for regexp, target_account in self.mappings:
-                    if regexp.match(account):
-                        account = target_account
-                        break
+                #for regexp, target_account in self.mappings:
+                #    if regexp.match(account):
+                #        account = target_account
+                #        break
 
                 account_type = account_types.get_account_type(account)
                 if posting.units.currency != self.currency:
@@ -249,7 +390,10 @@ class BeancountEnvelope:
                 # TODO
                 balances[account][month].add_position(posting)
 
-        # Reduce the final balances to numbers
+        return balances, all_months
+
+    def _sort_and_reduce(self, balances):
+
         sbalances = collections.defaultdict(dict)
         for account, months in sorted(balances.items()):
             for month, balance in sorted(months.items()):
@@ -265,18 +409,46 @@ class BeancountEnvelope:
                     raise
                 total = pos.units.number if pos and pos.units else None
                 sbalances[account][month] = total
+        return sbalances
+
+    def _calculate_budget_activity(self):
+
+        # Reduce the final balances to numbers
+        balances, all_months = self._get_balances()
+        sbalances = self._sort_and_reduce(balances)
 
         # Pivot the table
         header_months = sorted(all_months)
-        header = ['account'] + ['{}-{:02d}'.format(*m) for m in header_months]
         self.income_df.loc["Avail Income", :] = Decimal(0.00)
 
+        actual_expenses = pd.DataFrame(columns=header_months)
         for account in sorted(sbalances.keys()):
             for month in header_months:
                 total = sbalances[account].get(month, None)
                 temp = total.quantize(self.Q) if total else 0.00
                 # swap sign to be more human readable
                 temp *= -1
+                actual_expenses.loc[account, month] = Decimal(temp)
+
+        accounts_to_match = list(actual_expenses.index.values)
+        buckets = dict()
+        for regex, bucket in self.mappings:
+            accounts = [a for a in accounts_to_match if regex.match(a)]
+            for a in accounts:
+                accounts_to_match.remove(a)
+
+            existing_accounts = buckets.get(bucket)
+            existing_accounts = list() if existing_accounts is None else existing_accounts
+            existing_accounts.extend(accounts)
+            buckets[bucket] = existing_accounts
+
+        for account in accounts_to_match:
+            buckets[account] = [account]
+
+        for account in sorted(buckets.keys()):
+            for month in header_months:
+                all = actual_expenses[month].filter(items=buckets[account], axis=0)
+                temp = all.sum(axis=0)
 
                 month_str = f"{str(month[0])}-{str(month[1]).zfill(2)}"
                 if account == "Income":
@@ -285,6 +457,8 @@ class BeancountEnvelope:
                     self.envelope_df.loc[account,(month_str,'budgeted')] = Decimal(0.00)
                     self.envelope_df.loc[account,(month_str,'activity')] = Decimal(temp)
                     self.envelope_df.loc[account,(month_str,'available')] = Decimal(0.00)
+
+        return actual_expenses, buckets
 
     def _calc_budget_budgeted(self):
         rows = {}
