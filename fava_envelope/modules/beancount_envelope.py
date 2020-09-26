@@ -10,6 +10,7 @@ import logging
 import pandas as pd
 import numpy as np
 import re
+from dateutil.relativedelta import relativedelta
 
 from beancount.core.number import Decimal
 from beancount.core import data
@@ -28,13 +29,13 @@ BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, errors, options_map):
+    def __init__(self, entries, errors, options_map, start_date=None, future_months=0, future_rollover=False):
 
         self.entries = entries
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
-        self.start_date, self.end_date, self.budget_accounts, self.mappings = self._find_envelop_settings()
+        self.budget_accounts, self.mappings = self._find_envelop_settings()
 
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
@@ -43,11 +44,12 @@ class BeancountEnvelope:
         # TODO get start date from journal
         today = datetime.date.today()
         self.today = today
-        self.date_start = datetime.date(today.year,1,1) if self.start_date is None else datetime.datetime.strptime(self.start_date, '%Y-%m').date()
+
+        self.date_start = datetime.date(today.year, 1, 1) if start_date is None else start_date
 
         # Compute end of period
-        self.date_end = datetime.date(today.year, today.month, today.day) if self.end_date is None else datetime.datetime.strptime(self.end_date, '%Y-%m').date()
-
+        self.date_end = today + relativedelta(months=future_months)
+        self.future_rollover = future_rollover
 
         self.price_map = prices.build_price_map(entries)
         self.acctypes = options.get_account_types(options_map)
@@ -65,17 +67,11 @@ class BeancountEnvelope:
 
 
     def _find_envelop_settings(self):
-        start_date = None
-        end_date = None
         budget_accounts= []
         mappings = []
 
         for e in self.entries:
             if isinstance(e, Custom) and e.type == "envelope":
-                if e.values[0].value == "start date":
-                    start_date = e.values[1].value
-                if e.values[0].value == "end date":
-                    end_date = e.values[1].value
                 if e.values[0].value == "budget account":
                     budget_accounts.append(re.compile(e.values[1].value))
                 if e.values[0].value == "mapping":
@@ -88,7 +84,7 @@ class BeancountEnvelope:
         #if len(budget_accounts) == 0:
         #    self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
-        return start_date, end_date, budget_accounts, mappings
+        return budget_accounts, mappings
 
     def envelope_tables(self):
 
@@ -132,6 +128,8 @@ class BeancountEnvelope:
 
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
 
+        max_index = len(months) if self.future_rollover else months.index(self.current_month)
+
         # Set available
         for index, row in self.envelope_df.iterrows():
             for index2, month in enumerate(months):
@@ -139,7 +137,8 @@ class BeancountEnvelope:
                     row[month, 'available'] = row[month, 'budgeted'] + row[month, 'activity']
                 else:
                     prev_available = row[months[index2-1],'available']
-                    if prev_available > 0:
+                    rollover = index2 <= max_index
+                    if rollover and prev_available > 0:
                         row[month, 'available'] = prev_available + row[month, 'budgeted'] + row[month, 'activity']
                     else:
                         row[month, 'available'] = row[month, 'budgeted'] + row[month, 'activity']

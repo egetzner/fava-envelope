@@ -38,11 +38,21 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
 
         try:
+            start_date = self.config.get('start')
+
+            if start_date is not None:
+                start_date = datetime.date.fromisoformat(start_date)
+
+            future_months = self.config.get('future_months')
+            future_rollover = self.config.get('future_rollover')
+
             module = BeancountEnvelope(
                 self.ledger.entries,
                 self.ledger.errors,
-                self.ledger.options
+                self.ledger.options,
+                start_date, future_months, future_rollover
             )
+
             self.income_tables, self.envelope_tables, self.current_month, self.accounts = module.envelope_tables()
             self.leafs = list(self.envelope_tables.index)
         except:
