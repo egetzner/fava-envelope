@@ -21,6 +21,8 @@ from beancount.query import query
 from beancount.core.data import Custom
 from beancount.parser import options
 
+from beancount.core.realization import RealAccount, get_or_create
+
 BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
 
@@ -83,8 +85,8 @@ class BeancountEnvelope:
                     )
                     mappings.append(map_set)
 
-        if len(budget_accounts) == 0:
-            self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
+        #if len(budget_accounts) == 0:
+        #    self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
         return start_date, end_date, budget_accounts, mappings
 
@@ -171,7 +173,7 @@ class BeancountEnvelope:
 
         # Set Budgeted in the future
         for index, month in enumerate(months):
-            sum_total = self.income_df[month].sum();
+            sum_total = self.income_df[month].sum()
             if (index == len(months)-1) or sum_total < 0 :
                 self.income_df.loc["Budgeted Future", month] = Decimal(0.00)
             else:
@@ -186,7 +188,19 @@ class BeancountEnvelope:
         for index, month in enumerate(months):
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
-        return self.income_df, self.envelope_df, self.current_month
+        self.accounts = self._get_accounts(self.envelope_df.index)
+        return self.income_df, self.envelope_df, self.current_month, self.accounts
+
+
+    def _get_accounts(self, names):
+        roots = {}
+        for name in names:
+            root_name = name.split(':')[0]
+            root = roots.get(root_name) if root_name in roots else RealAccount(root_name)
+            get_or_create(root, name)
+            roots[root_name] = root
+        return list(roots.values())
+
 
     def _calculate_budget_activity(self):
 
