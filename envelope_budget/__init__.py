@@ -13,6 +13,7 @@ from beancount.core.number import Decimal, D
 from beancount.core import data
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope, Bucket
+from fava_envelope.modules.beancount_goals import BeancountGoal
 
 from datetime import date
 import collections
@@ -35,6 +36,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.current_month = None
         self.accounts = None
         self.actual_spent = None
+        self.leafs = None
 
     def generate_budget_df(self):
 
@@ -57,7 +59,13 @@ class EnvelopeBudgetColor(FavaExtensionBase):
                 start_date, future_months, future_rollover, show_real_accounts
             )
 
-            self.income_tables, self.envelope_tables, self.current_month, self.accounts, self.actual_spent = module.envelope_tables()
+            goals = BeancountGoal(
+                self.ledger.entries,
+                self.ledger.errors,
+                self.ledger.options, module.currency)
+
+            self.income_tables, self.envelope_tables, self.current_month, self.accounts, _ = module.envelope_tables()
+            self.actual_spent = goals.parse_transactions(module.budget_accounts, module.date_start, module.date_end)
             self.leafs = list(self.envelope_tables.index)
         except:
             self.ledger.errors.append(LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))
@@ -185,8 +193,10 @@ class EnvelopeBudgetColor(FavaExtensionBase):
                 self._add_amount(self.midvrows[index], e_row[period, "available"])
                 self._add_amount(self.midbrows[index], e_row[period, "budgeted"])
                 self._add_amount(self.midsrows[index], e_row[period, "activity"])
-            for index, data in self.actual_spent.iterrows():
-                self._add_amount(self.actsrows[index], data[period])
+
+            if self.actual_spent is not None:
+                for index, data in self.actual_spent.iterrows():
+                    self._add_amount(self.actsrows[index], data[period])
 
         #root = [
         #    self.ledger.all_root_account.get('Income'),

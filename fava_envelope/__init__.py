@@ -19,21 +19,24 @@ class EnvelopeBudget(FavaExtensionBase):
     '''
     report_title = "Envelope Budget"
 
-    def generate_budget_df(self):
-
+    def __init__(self, ledger, config):
         self.income_tables = None
         self.envelope_tables = None
         self.current_month = None
+        self.accounts = None
+        ledger.errors = list(filter(lambda i: not (type(i) is LoadError), ledger.errors))
+        super().__init__(ledger, config)
+
+    def generate_budget_df(self):
 
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
-
         try:
             module = BeancountEnvelope(
                 self.ledger.entries,
                 self.ledger.errors,
                 self.ledger.options
             )
-            self.income_tables, self.envelope_tables, self.current_month, self.accounts, self.actual_spent = module.envelope_tables()
+            self.income_tables, self.envelope_tables, self.current_month, self.accounts, _ = module.envelope_tables()
 
         except:
             self.ledger.errors.append(LoadError(data.new_metadata("<fava-envelope>", 0), traceback.format_exc(), None))
