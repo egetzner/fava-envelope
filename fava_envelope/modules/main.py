@@ -21,7 +21,7 @@ def main():
     # Read beancount input file
     entries, errors, options_map = loader.load_file(args.filename)
     ext = BeancountEnvelope(entries, errors, options_map)
-    df1, df2, cm, accounts, actual_spent = ext.envelope_tables()
+    df1, df2, cm, accounts = ext.envelope_tables()
 
     goals = BeancountGoal(entries, errors, options_map, "EUR")
     gdf = goals.parse_fava_budget(entries, start_date=ext.date_start, end_date=ext.date_end)
@@ -31,6 +31,8 @@ def main():
 
     original = df2.xs(level=1, key='activity', axis=1)
     from_goals = mapped.xs(level=1, key='activity', axis=1)
+
+    logging.info(act)
 
     for index, row in original.eq(from_goals).iterrows():
         if not row.all():

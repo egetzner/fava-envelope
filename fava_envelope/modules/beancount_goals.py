@@ -27,7 +27,7 @@ class BeancountGoal:
         self.Q = Decimal(decimal_precison)
 
     def _get_date_range(self, start, end):
-        return pd.date_range(start, end, freq='MS').to_pydatetime()
+        return pd.date_range(start, end, freq='MS')#.to_pydatetime()
 
     def _date_to_string(self, x):
         return f"{x.year}-{str(x.month).zfill(2)}"
@@ -57,8 +57,8 @@ class BeancountGoal:
         act = self.parse_transactions(budget_accounts, start, end)
 
         mrg = pd.concat({'goals':gdf, 'activity':act}, axis=1)
-        mrg = mrg.swaplevel(0, 1, axis=1)
-        return mrg.sort_index()
+        mrg = mrg.swaplevel(0, 1, axis=1).reindex()
+        return mrg.sort_index().fillna(0)
 
     def parse_fava_budget(self, entries, start_date, end_date):
         custom = [e for e in entries if isinstance(e, Custom)]
@@ -73,7 +73,7 @@ class BeancountGoal:
                 # note: calculate_budget_children would also include the sub-categories, which is not what we want here
                 cb = calculate_budget(budgets, be, start, end)
                 values[be] = cb[self.currency].quantize(self.Q)
-            all_months_data[d] = values
+            all_months_data[self._date_to_string(d)] = values
 
         return pd.DataFrame(all_months_data).sort_index()
 
@@ -81,18 +81,17 @@ class BeancountGoal:
 
         balances = self._parse_actual_postings(budget_accounts, start, end)
         sbalances = self._sort_and_reduce(balances)
-        header_months = self._get_date_range(start, end)
+        date_range = self._get_date_range(start, end)
 
-        actual_expenses = pd.DataFrame(columns=header_months)
+        actual_expenses = pd.DataFrame()
         for account in sorted(sbalances.keys()):
-            for month in header_months:
+            for month in date_range:
                 total = sbalances[account].get((month.year, month.month), None)
                 temp = total.quantize(self.Q) if total else 0.00
                 # swap sign to be more human readable
                 temp *= -1
-                actual_expenses.loc[account, month] = Decimal(temp)
+                actual_expenses.loc[account, self._date_to_string(month)] = Decimal(temp)
 
-        actual_expenses.columns = [self._date_to_string(x) for x in header_months]
         return actual_expenses
 
     def _parse_actual_postings(self, budget_accounts, start_date, end_date):

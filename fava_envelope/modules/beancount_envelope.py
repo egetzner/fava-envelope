@@ -230,7 +230,7 @@ class BeancountEnvelope:
         self.envelope_df = pd.DataFrame(columns=column_index)
         self.envelope_df.index.name = "Envelopes"
 
-        self.actual_spent, buckets = self._calculate_budget_activity()
+        buckets = self._calculate_budget_activity()
         self._calc_budget_budgeted()
 
         # Calculate Starting Balance Income
@@ -305,8 +305,7 @@ class BeancountEnvelope:
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
         self.accounts = self._get_accounts(self.envelope_df.index, buckets)
-        self.actual_spent.columns = months
-        return self.income_df, self.envelope_df, self.current_month, self.accounts, self.actual_spent
+        return self.income_df, self.envelope_df, self.current_month, self.accounts
 
 
     def _get_accounts(self, names, buckets):
@@ -443,7 +442,7 @@ class BeancountEnvelope:
                     self.envelope_df.loc[account,(month_str,'activity')] = Decimal(temp)
                     self.envelope_df.loc[account,(month_str,'available')] = Decimal(0.00)
 
-        return actual_expenses, buckets
+        return buckets
 
     def _calc_budget_budgeted(self):
         rows = {}

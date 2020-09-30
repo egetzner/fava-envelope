@@ -35,7 +35,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.envelope_tables = None
         self.current_month = None
         self.accounts = None
-        self.actual_spent = None
+        self.actual_accounts = None
         self.leafs = None
 
     def generate_budget_df(self):
@@ -62,10 +62,11 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             goals = BeancountGoal(
                 self.ledger.entries,
                 self.ledger.errors,
-                self.ledger.options, module.currency)
+                self.ledger.options,
+                module.currency)
 
-            self.income_tables, self.envelope_tables, self.current_month, self.accounts, _ = module.envelope_tables()
-            self.actual_spent = goals.parse_transactions(module.budget_accounts, module.date_start, module.date_end)
+            self.income_tables, self.envelope_tables, self.current_month, self.accounts = module.envelope_tables()
+            self.actual_accounts = goals.get_merged(module.budget_accounts, module.date_start, module.date_end)
             self.leafs = list(self.envelope_tables.index)
         except:
             self.ledger.errors.append(LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))
@@ -187,6 +188,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.midvrows = ddict(Inventory)
 
         self.actsrows = ddict(Inventory)
+        self.goalrows = ddict(Inventory)
 
         if period is not None and self.envelope_tables is not None:
             for index, e_row in self.envelope_tables.iterrows():
@@ -194,9 +196,10 @@ class EnvelopeBudgetColor(FavaExtensionBase):
                 self._add_amount(self.midbrows[index], e_row[period, "budgeted"])
                 self._add_amount(self.midsrows[index], e_row[period, "activity"])
 
-            if self.actual_spent is not None:
-                for index, data in self.actual_spent.iterrows():
-                    self._add_amount(self.actsrows[index], data[period])
+            if self.actual_accounts is not None:
+                for index, data in self.actual_accounts.iterrows():
+                    self._add_amount(self.actsrows[index], data[period, "activity"])
+                    self._add_amount(self.goalrows[index], data[period, "goals"])
 
         #root = [
         #    self.ledger.all_root_account.get('Income'),
@@ -255,16 +258,20 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return amount
 
     def _row(self, rows, a):
-        rows = self.__get_rows(rows, a)
+        rrows = self.__get_rows(rows, a)
         if isinstance(a, Bucket):
             a = a.account
-        d: Inventory = rows.get(a)
+        d: Inventory = rrows.get(a)
         return -self._only_position(d)
 
     def __get_rows(self, rows, a):
         if isinstance(rows, str):
             if rows == 'budgeted':
                 return self.midbrows
+            elif rows == "goals":
+                if self._is_real_account(a):
+                    return self.goalrows
+                return {}
             elif rows == 'spent':
                 if self._is_real_account(a):
                     return self.actsrows
@@ -300,8 +307,9 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
         if self._is_real_account(a):
             if self.display_real_accounts:
-                value = self.actual_spent.loc[a.account][period]
-                return value != 0
+                row = self.actual_accounts.loc[a.account][period]
+                non_zero = [x for x in row if x != 0]
+                return len(non_zero) > 0
             else:
                 return False
 

@@ -81,6 +81,7 @@
   {% endfor %}
 </div>
 
+{% set grows = "goals" %}
 {% set brows = "budgeted" %}
 {% set srows = "spent" %}
 {% set vrows = "available" %}
@@ -95,10 +96,13 @@
 <ol is="tree-table" class="flex-table tree-table">
     <li class="head">
         <p>
-        <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
-        <span class="num">Budgeted</span>
-        <span class="num">Spent</span>
-        <span class="num">Available</span>
+            <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
+            {% if extension.display_real_accounts %}
+            <span class="num">Goals</span>
+            {% endif %}
+            <span class="num">Budgeted</span>
+            <span class="num">Spent</span>
+            <span class="num">Available</span>
         </p>
     </li>
 {% set ns = namespace(rown=1) %}
@@ -122,9 +126,24 @@
             </a>
         {% endif %}
         </span>
+        {% set goal = extension._row(grows, account) %}
         {% set budgeted = extension._row(brows, account) %}
         {% set spent = extension._row(srows, account) %}
         {% set available = extension._row(vrows, account) %}
+
+        {% if extension.display_real_accounts %}
+
+        {% if extension._is_real_account(account)%}
+            <span class="num">
+                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
+                  {{ extension.format_amount(goal, show_if_zero=False) }}
+                </a>
+            </span>
+        {% else %}
+          <span class="num">
+          </span>
+        {% endif %}
+        {% endif %}
 
         {% if extension._is_real_account(account)%}
         <span class="num"></span>
@@ -136,7 +155,7 @@
             </a>
           </span>
           <span class="balance-children {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-            <a href="{{ url_for('account', name=account.account, time=period, filter='bal-chil') }}">
+            <a href="{{ url_for('account', name=account.account, time=period) }}">
               {{ extension.format_amount(extension._row_children(brows, account), show_if_zero=True) }}
             </a>
           </span>
