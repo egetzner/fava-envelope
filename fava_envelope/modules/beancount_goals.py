@@ -2,16 +2,14 @@
 from fava.core.budgets import parse_budgets, calculate_budget
 
 import collections
-import logging
 import pandas as pd
 import datetime
 from dateutil.relativedelta import relativedelta
 
 from beancount.core.number import Decimal
-from beancount.core import convert, prices, inventory, data, account_types
+from beancount.core import convert, prices, inventory, data, account_types, account
 from beancount.core.data import Custom
 from beancount.parser import options
-
 
 class BeancountGoal:
     def __init__(self, entries, errors, options_map, currency):
@@ -32,25 +30,6 @@ class BeancountGoal:
     def _date_to_string(self, x):
         return f"{x.year}-{str(x.month).zfill(2)}"
 
-    def _map_to_bucket(self, mappings, account):
-        for regexp, target_bucket in mappings:
-            if regexp.match(account):
-                return target_bucket
-
-        return account
-
-    def map_to_buckets(self, mappings, df):
-        all_buckets = dict()
-
-        for index, row in df.iterrows():
-            bucket = self._map_to_bucket(mappings, index)
-            values = row.fillna(0)
-            if bucket in all_buckets:
-                values = values + all_buckets[bucket]
-
-            all_buckets[bucket] = values
-
-        return pd.DataFrame(all_buckets).transpose().sort_index()
 
     def get_merged(self, budget_accounts, start, end):
         gdf = self.parse_fava_budget(self.entries, start_date=start, end_date=end)

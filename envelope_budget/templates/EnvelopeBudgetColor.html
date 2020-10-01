@@ -97,9 +97,7 @@
     <li class="head">
         <p>
             <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
-            {% if extension.display_real_accounts %}
             <span class="num">Goals</span>
-            {% endif %}
             <span class="num">Budgeted</span>
             <span class="num">Spent</span>
             <span class="num">Available</span>
@@ -131,19 +129,13 @@
         {% set spent = extension._row(srows, account) %}
         {% set available = extension._row(vrows, account) %}
 
-        {% if extension.display_real_accounts %}
-
-        {% if extension._is_real_account(account)%}
-            <span class="num">
-                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
-                  {{ extension.format_amount(goal, show_if_zero=False) }}
-                </a>
-            </span>
-        {% else %}
-          <span class="num">
+        <span class="num {{ 'has-balance' if goal else '' }}">
+          <span class="balance goal">
+            <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
+              {{ extension.format_amount(goal, show_if_zero=False) }}
+            </a>
           </span>
-        {% endif %}
-        {% endif %}
+        </span>
 
         {% if extension._is_real_account(account)%}
         <span class="num"></span>
