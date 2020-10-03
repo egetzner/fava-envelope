@@ -163,7 +163,12 @@ def get_hierarchy(buckets_with_accounts, include_children):
                 for acc in contained_accounts:
                     get_or_create(bucket, acc)
         roots[root_name] = root
-    return list(roots.values())
+
+    # root = [
+    #    self.ledger.all_root_account.get('Income'),
+    #    self.ledger.all_root_account.get('Expenses'),
+    # ]
+    return [list(acc.values())[0] for acc in roots.values()]
 
 
 def map_df_to_buckets(mappings, df):

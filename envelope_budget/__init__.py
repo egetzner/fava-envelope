@@ -13,8 +13,8 @@ from beancount.core.number import Decimal, D
 from beancount.core import data
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
-from fava_envelope.modules.beancount_goals import BeancountGoal
 from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, map_accounts_to_bucket, map_df_to_buckets
+from fava_envelope.modules.goal_envelopes import EnvelopeWrapper, AccountRow
 
 from datetime import date
 import collections
@@ -33,13 +33,9 @@ class EnvelopeBudgetColor(FavaExtensionBase):
     def __init__(self, ledger, config=None):
         super().__init__(ledger, config)
         self.display_real_accounts = False
+        self.envelopes: EnvelopeWrapper = EnvelopeWrapper([], [], [], None)
+
         self.income_tables = None
-        self.envelope_tables = None
-        self.current_month = None
-        self.actual_accounts = None
-        self.leaf_accounts = None
-        self.mapped_accounts = None
-        self.mapped_tables = None
 
     def generate_budget_df(self):
 
@@ -62,34 +58,13 @@ class EnvelopeBudgetColor(FavaExtensionBase):
                 start_date, future_months, future_rollover, show_real_accounts
             )
 
-            goals = BeancountGoal(
-                self.ledger.entries,
-                self.ledger.errors,
-                self.ledger.options,
-                module.currency)
-
-            self.income_tables, self.envelope_tables, self.current_month = module.envelope_tables()
-            self.leaf_accounts = list(self.envelope_tables.index)
-
-            self.actual_accounts = goals.get_merged(module.budget_accounts, module.date_start, module.date_end)
-            self.mapped_tables = map_df_to_buckets(module.mappings, self.actual_accounts)
-            self.mapped_accounts = map_accounts_to_bucket(module.mappings, self.actual_accounts.index)
+            self.envelopes = EnvelopeWrapper(self.ledger.entries, self.ledger.errors, self.ledger.options, module)
         except:
             self.ledger.errors.append(
                 LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))
 
     def get_budgets_months_available(self):
-        return [] if self.income_tables is None else self.income_tables.columns
-
-    def get_current_month(self, period):
-        today = date.today()
-
-        if period is not None:
-            return period
-        else:
-            year = today.year
-            month = today.month
-            return f'{year:04}-{month:02}'
+        return self.envelopes.get_budgets_months_available()
 
     def toggle_show_accounts(self):
         self.display_real_accounts = not self.display_real_accounts
@@ -108,51 +83,31 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
         income_table_rows = []
 
-        if month is not None and self.income_tables is not None:
+        if month is not None and self.envelopes.initialized:
+            tables = self.envelopes.income_tables
             row = {}
             income_table_rows.append({
                 "Name": "Funds for month",
-                "Amount": self.income_tables[month]["Avail Income"]
+                "Amount": tables[month]["Avail Income"]
             })
             income_table_rows.append({
                 "Name": "Overspent in prev month",
-                "Amount": self.income_tables[month]["Overspent"]
+                "Amount": tables[month]["Overspent"]
             })
             income_table_rows.append({
                 "Name": "Budgeted for month",
-                "Amount": self.income_tables[month]["Budgeted"]
+                "Amount": tables[month]["Budgeted"]
             })
             income_table_rows.append({
                 "Name": "To be budgeted for month",
-                "Amount": self.income_tables[month]["To Be Budgeted"]
+                "Amount": tables[month]["To Be Budgeted"]
             })
             income_table_rows.append({
                 "Name": "Budgeted in the future",
-                "Amount": self.income_tables[month]["Budgeted Future"]
+                "Amount": tables[month]["Budgeted Future"]
             })
 
         return (income_table_types, income_table_rows)
-
-    def generate_envelope_query_tables(self, month):
-
-        envelope_table_types = []
-        envelope_table_types.append(("Account", str(str)))
-        envelope_table_types.append(("Budgeted", str(Decimal)))
-        envelope_table_types.append(("Activity", str(Decimal)))
-        envelope_table_types.append(("Available", str(Decimal)))
-
-        envelope_table_rows = []
-
-        if month is not None and self.envelope_tables is not None:
-            for index, e_row in self.envelope_tables.iterrows():
-                row = {}
-                row["Account"] = index
-                row["Budgeted"] = e_row[month, "budgeted"]
-                row["Activity"] = e_row[month, "activity"]
-                row["Available"] = e_row[month, "available"]
-                envelope_table_rows.append(row)
-
-        return (envelope_table_types, envelope_table_rows)
 
     # ----
 
@@ -169,7 +124,6 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         """An account tree based on matching regex patterns."""
 
         self.set_show_accounts(show_accounts)
-
 
         self.generate_budget_df()
 
@@ -188,45 +142,8 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.period_start = datetime.date(year, month, 1)
         self.period_end = datetime.date(year + month // 12, month % 12 + 1, 1)
 
-        # budget rows
-        self.midbrows = ddict(Inventory)
-
-        # spent rows
-        self.midsrows = ddict(Inventory)
-
-        # available rows
-        self.midvrows = ddict(Inventory)
-
-        self.actsrows = ddict(Inventory)
-        self.goalrows = ddict(Inventory)
-
-        if period is not None and self.envelope_tables is not None:
-            for index, e_row in self.envelope_tables.iterrows():
-                self._add_amount(self.midvrows[index], e_row[period, "available"])
-                self._add_amount(self.midbrows[index], e_row[period, "budgeted"])
-                self._add_amount(self.midsrows[index], e_row[period, "activity"])
-
-            if self.actual_accounts is not None:
-                for index, data in self.actual_accounts.iterrows():
-                    self._add_amount(self.actsrows[index], data[period, "activity"])
-                    self._add_amount(self.goalrows[index], data[period, "goals"])
-
-            if self.mapped_tables is not None:
-                for index, data in self.mapped_tables.iterrows():
-                    self._add_amount(self.goalrows[index], data[period, "goals"])
-
-        # root = [
-        #    self.ledger.all_root_account.get('Income'),
-        #    self.ledger.all_root_account.get('Expenses'),
-        # ]
-
-        acc_hierarchy = get_hierarchy(self.mapped_accounts, self.display_real_accounts)
-        root = [list(acc.values())[0] for acc in acc_hierarchy]
-        return root, period
-
-    def _add_amount(self, inventory, value, currency='EUR'):
-        if value != 0:
-            inventory.add_amount(Amount(-value, currency))
+        self.current_period = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
+        return self.current_period, period
 
     def format_currency(self, value, currency=None, show_if_zero=False):
         if not value and not show_if_zero:
@@ -262,42 +179,37 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return children
 
     def _only_position(self, inventory):
-        if inventory is None:
+        if inventory is None or inventory.is_empty():
             return Amount(ZERO, "EUR")
-        if inventory.is_empty():
-            return Amount(ZERO, "EUR")
-        # currency ,= inventory.currencies()
-        currency = 'EUR'
+        currency ,= inventory.currencies()
+        #currency = 'EUR'
         amount: Amount = inventory.get_currency_units(currency)
         return amount
 
-    def _row(self, rows, a):
-        rrows = self.__get_rows(rows, a)
+    def _account_row(self, a):
         if isinstance(a, Bucket):
             a = a.account
-        d: Inventory = rrows.get(a)
+        return self.current_period.values[a]
+
+    def __get_row(self, a, name):
+        row: AccountRow = self._account_row(a)
+        return row.get(name)
+
+    def _row(self, rows, a):
+        d: Inventory = self.__get_row(a, rows)
         return -self._only_position(d)
 
-    def __get_rows(self, rows, a):
-        if isinstance(rows, str):
-            if rows == 'budgeted':
-                return self.midbrows
-            elif rows == "goals":
-                return self.goalrows
-            elif rows == 'spent':
-                if self._is_real_account(a):
-                    return self.actsrows
-                return self.midsrows
-            elif rows == 'available':
-                return self.midvrows
-        return rows
+    def __get_rows(self, a):
+        if isinstance(a, Bucket):
+            a = a.account
+        values = self.current_period.values
+        return [values[ar] for ar in values.keys() if ar.startswith(a)]
 
     def _row_children(self, rows, a):
         sum = Inventory()
-        rows = self.__get_rows(rows, a)
-        for sub in rows:
-            if sub.startswith(a.account):
-                sum.add_inventory(rows.get(sub, Inventory()))
+        all_matching = self.__get_rows(a)
+        for sub in all_matching:
+            sum.add_inventory(sub.get(rows))
         return -self._only_position(sum.reduce(convert.get_weight))
 
     def _has_children(self, a, period):
@@ -312,20 +224,16 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return (open is None or open.date < self.period_end) and (close is None or close.date > self.period_start)
 
     def _is_visible(self, a, period):
-        if a.account in self.leaf_accounts:
-            row = self.envelope_tables.loc[a.account][period]
-            non_zero = [x for x in row if x != 0]
-            return len(non_zero) > 0
+        if self.envelopes.is_visible_bucket(a, period):
+            return True
 
         if self._is_real_account(a):
-            if self.display_real_accounts:
-                row = self.actual_accounts.loc[a.account][period]
-                non_zero = [x for x in row if x != 0]
-                return len(non_zero) > 0
-            else:
+            if not self.display_real_accounts:
                 return False
 
-        return True
+            return self.envelopes.is_visible_account(a, period)
+
+        return True  # otherwise it's a parent category
 
     def _period_for(self, date):
         return date.strftime('%Y-%m')

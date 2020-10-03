@@ -58,8 +58,7 @@
 }
 </style>
 
-{% set month = extension.get_current_month(request.args.get('month')) %}
-{% set root, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
+{% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
 
 <div class="headerline">
     <h3 class="budget-header"> {{ extension._date_range() }}  </h3>
@@ -104,7 +103,7 @@
         </p>
     </li>
 {% set ns = namespace(rown=1) %}
-{% for account in root if extension._is_open(account) and extension._is_visible(account, period) recursive %}
+{% for account in data.accounts if extension._is_open(account) and extension._is_visible(account, period) recursive %}
 {% set ns.rown = 1 if extension._has_children(account, period) else 1 - ns.rown %}
 <li{{ ' class=toggled' if account.account|collapse_account else '' }}>
   <p class="row-{{ns.rown}}
@@ -192,8 +191,3 @@
 {% endfor %}
 </ol>
 <br />
-
-<!--
-{% set envelope_table = extension.generate_envelope_query_tables(month) %}
-{{ querytable.querytable(None, envelope_table[0], envelope_table[1]) }}
--->
