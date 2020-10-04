@@ -9,6 +9,7 @@ try:
 except ImportError:
     pass
 
+import pandas as pd
 from beancount import loader
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
@@ -28,13 +29,7 @@ def main():
     df1, df2, cm = ext.envelope_tables()
 
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
-
-    data = ge.get_inventories('2020-04', False)
-
-    logging.info(data.period)
-    logging.info(data.accounts)
-    logging.info(data.values['Expenses:CostOfLiving:Body'])
-
+    logging.info(ge.merged_envelope_tables['2020-01'])
 
     if len(errors) == 0:
         logging.debug('no errors found')

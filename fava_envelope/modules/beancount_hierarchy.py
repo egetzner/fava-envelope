@@ -145,7 +145,13 @@ def map_accounts_to_bucket(mappings, accounts):
         existing_accounts.extend(accounts)
         buckets[bucket] = existing_accounts
 
+    # TODO: handle income acounts better
+    income = [a for a in accounts_to_match if a.startswith('Income:') or a == 'Income']
+    for ia in income:
+        accounts_to_match.remove(ia)
+
     if len(accounts_to_match) > 0:
+        logging.warning(f'unmatched accounts: {accounts_to_match}')
         buckets['Unmapped'] = list(accounts_to_match)
 
     return buckets
@@ -183,3 +189,10 @@ def map_df_to_buckets(mappings, df):
         all_buckets[bucket] = values
 
     return pd.DataFrame(all_buckets).transpose().sort_index()
+
+
+def merge_envelope_tables(mappings, edf, adf):
+    madf = map_df_to_buckets(mappings, adf)
+    mrg = pd.concat([edf, madf.xs(level=1, key='goals', axis=1, drop_level=False)], axis=1)
+    return mrg.fillna(0)
+

@@ -224,16 +224,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return (open is None or open.date < self.period_end) and (close is None or close.date > self.period_start)
 
     def _is_visible(self, a, period):
-        if self.envelopes.is_visible_bucket(a, period):
-            return True
-
-        if self._is_real_account(a):
-            if not self.display_real_accounts:
-                return False
-
-            return self.envelopes.is_visible_account(a, period)
-
-        return True  # otherwise it's a parent category
+        return self.current_period.is_visible(a, show_real=self.display_real_accounts)
 
     def _period_for(self, date):
         return date.strftime('%Y-%m')
