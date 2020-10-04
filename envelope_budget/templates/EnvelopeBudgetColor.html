@@ -84,6 +84,7 @@
 {% set brows = "budgeted" %}
 {% set srows = "spent" %}
 {% set vrows = "available" %}
+{% set trows = "target" %}
 
 <!--
 -->
@@ -126,12 +127,18 @@
         {% set budgeted = extension._row(brows, account) %}
         {% set spent = extension._row(srows, account) %}
         {% set available = extension._row(vrows, account) %}
+        {% set target = extension._row(trows, account) %}
 
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
-            <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
+              {% if goal.number != 0 and not extension._is_real_account(account) %}
+                  {% if target.number <= 0 %}
+                    &#x2714;
+                    {% else%}
+                    &#x2B55;
+                  {% endif %}
+              {% endif %}
               {{ extension.format_amount(goal, show_if_zero=False) }}
-            </a>
           </span>
         </span>
 

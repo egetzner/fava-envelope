@@ -29,7 +29,7 @@ def main():
     df1, df2, cm = ext.envelope_tables()
 
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
-    logging.info(ge.merged_envelope_tables['2020-01'])
+    logging.info(ge.envelope_tables_with_goals['2020-01'])
 
     if len(errors) == 0:
         logging.debug('no errors found')

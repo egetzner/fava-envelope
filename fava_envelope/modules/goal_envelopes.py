@@ -13,7 +13,6 @@ def _add_amount(inventory, value, currency='EUR'):
     if value != 0:
         inventory.add_amount(Amount(-value, currency))
 
-
 class AccountRow:
     def __init__(self):
         self.name: str = "<Unknown>"
@@ -24,9 +23,9 @@ class AccountRow:
         self.budgeted: Inventory = Inventory()
         self.available: Inventory = Inventory()
         self.spent: Inventory = Inventory()
+        self.target: Inventory = Inventory()
 
         self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available})
-
 
     def get(self, name):
         if isinstance(name, str):
@@ -38,6 +37,8 @@ class AccountRow:
                 return self.spent
             elif name == 'available':
                 return self.available
+            elif name == 'target':
+                return self.target
 
         return Inventory()
 
@@ -82,7 +83,8 @@ class EnvelopeWrapper:
         goals = BeancountGoal(entries, errors, options, module.currency)
         self.income_tables, self.envelope_tables, current_month = module.envelope_tables()
         self.actual_accounts = goals.get_merged(module.budget_accounts, module.date_start, module.date_end)
-        self.merged_envelope_tables = merge_envelope_tables(module.mappings, self.envelope_tables, self.actual_accounts)
+        merged_envelope_tables = merge_envelope_tables(module.mappings, self.envelope_tables, self.actual_accounts)
+        self.envelope_tables_with_goals = goals.compute_targets(merged_envelope_tables)
         self.mapped_accounts = map_accounts_to_bucket(module.mappings, self.actual_accounts.index)
 
     def get_budgets_months_available(self):
@@ -103,15 +105,17 @@ class EnvelopeWrapper:
 
         all_values = ddict(AccountRow)
 
-        if period is not None and self.merged_envelope_tables is not None:
-            for index, e_row in self.merged_envelope_tables.iterrows():
+        if period is not None and self.envelope_tables_with_goals is not None:
+            for index, e_row in self.envelope_tables_with_goals.iterrows():
                 account_row = all_values[index]
                 account_row.name = index
                 account_row.is_bucket = True
+
                 _add_amount(account_row.available, e_row[period, "available"])
                 _add_amount(account_row.budgeted, e_row[period, "budgeted"])
                 _add_amount(account_row.spent, e_row[period, "activity"])
                 _add_amount(account_row.goal, e_row[period, "goals"])
+                _add_amount(account_row.target, e_row[period, "target"])
 
             if self.actual_accounts is not None:
                 for index, data in self.actual_accounts.iterrows():

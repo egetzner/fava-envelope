@@ -1,6 +1,7 @@
 
 from fava.core.budgets import parse_budgets, calculate_budget
 
+import logging
 import collections
 import pandas as pd
 import datetime
@@ -30,6 +31,17 @@ class BeancountGoal:
     def _date_to_string(self, x):
         return f"{x.year}-{str(x.month).zfill(2)}"
 
+    def compute_targets(self, tables):
+        goals = tables.xs(key='goals', level=1, axis=1)
+        spent = tables.xs(key='activity', level=1, axis=1)
+        budgeted = tables.xs(key='budgeted', level=1, axis=1)
+        available = tables.xs(key='available', level=1, axis=1)
+        originally_available = available + spent*-1
+        target = goals - originally_available
+        target.name = 'target'
+        merged = pd.concat({'budgeted':budgeted, 'activity':spent, 'available':available, 'goals':goals, 'target':target}, axis=1)
+        df = merged.swaplevel(0, 1, axis=1).sort_index().fillna(0)
+        return df
 
     def get_merged(self, budget_accounts, start, end):
         gdf = self.parse_fava_budget(self.entries, start_date=start, end_date=end)
