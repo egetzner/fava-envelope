@@ -125,6 +125,6 @@ class EnvelopeWrapper:
                     _add_amount(account_row.spent, data[period, "activity"])
                     _add_amount(account_row.goal, data[period, "goals"])
 
-        acc_hierarchy = get_hierarchy(self.mapped_accounts, include_real_accounts)
+        acc_hierarchy = get_hierarchy(self.envelope_tables_with_goals.index, self.mapped_accounts, include_real_accounts)
         return PeriodData(period, all_values, acc_hierarchy)
 

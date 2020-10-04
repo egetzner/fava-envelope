@@ -157,9 +157,9 @@ def map_accounts_to_bucket(mappings, accounts):
     return buckets
 
 
-def get_hierarchy(buckets_with_accounts, include_children):
+def get_hierarchy(buckets, buckets_with_accounts, include_children):
     roots = {}
-    for name in sorted(buckets_with_accounts):
+    for name in sorted(buckets):
         root_name = name.split(':')[0]
         root = roots.get(root_name, Bucket(root_name))
         bucket = get_or_create_with_hierarchy(root, name)
