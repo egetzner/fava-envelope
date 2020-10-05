@@ -12,6 +12,9 @@ from beancount.core import convert, prices, inventory, data, account_types, acco
 from beancount.core.data import Custom
 from beancount.parser import options
 
+from fava_envelope import BeancountEnvelope
+
+
 class BeancountGoal:
     def __init__(self, entries, errors, options_map, currency):
 
@@ -43,9 +46,9 @@ class BeancountGoal:
         df = merged.swaplevel(0, 1, axis=1).sort_index().fillna(0)
         return df
 
-    def get_merged(self, budget_accounts, start, end):
+    def get_merged(self, module: BeancountEnvelope, start, end):
         gdf = self.parse_fava_budget(self.entries, start_date=start, end_date=end)
-        act = self.parse_transactions(budget_accounts, start, end)
+        act = self.parse_transactions(module, start, end)
 
         mrg = pd.concat({'goals':gdf, 'activity':act}, axis=1)
         mrg = mrg.swaplevel(0, 1, axis=1).reindex()
@@ -68,9 +71,9 @@ class BeancountGoal:
 
         return pd.DataFrame(all_months_data).sort_index()
 
-    def parse_transactions(self, budget_accounts, start, end):
+    def parse_transactions(self, module: BeancountEnvelope, start, end):
 
-        balances = self._parse_actual_postings(budget_accounts, start, end)
+        balances = self._parse_actual_postings(module, start, end)
         sbalances = self._sort_and_reduce(balances)
         date_range = self._get_date_range(start, end)
 
@@ -85,7 +88,7 @@ class BeancountGoal:
 
         return actual_expenses
 
-    def _parse_actual_postings(self, budget_accounts, start_date, end_date):
+    def _parse_actual_postings(self, be: BeancountEnvelope, start_date, end_date):
 
         # Accumulate expenses for the period
         balances = collections.defaultdict(
@@ -95,30 +98,37 @@ class BeancountGoal:
         for entry in data.filter_txns([e for e in self.entries if start_date <= e.date <= end_date]):
 
             month = (entry.date.year, entry.date.month)
-            contains_budget_accounts = False
-            for posting in entry.postings:
-                if any(regexp.match(posting.account) for regexp in budget_accounts):
-                    contains_budget_accounts = True
-                    break
 
-            if not contains_budget_accounts:
+            if not any(be.is_budget_account(p.account) for p in entry.postings):
                 continue
 
-            for posting in entry.postings:
+            income_accounts = set([p.account for p in entry.postings if be.is_income(p.account)])
 
-                account = posting.account
-                account_type = account_types.get_account_type(account)
-                if posting.units.currency != self.currency:
-                    continue
+            #use net income:
+            if len(income_accounts) >= 1:
+                income_accounts = list(income_accounts)
 
-                if account_type == self.acctypes.income:
-                    account = "Income"
-                elif any(regexp.match(posting.account) for regexp in budget_accounts):
-                    continue
-                # TODO Warn of any assets / liabilities left
+                if len(income_accounts) > 1:
+                    logging.warning(f"Multiple Input accounts detected: {income_accounts} - using first.")
 
-                # TODO
-                balances[account][month].add_position(posting)
+                bucket = income_accounts[0]
+                for posting in entry.postings:
+                    if posting.units.currency != self.currency:
+                        continue
+                    if be.is_budget_account(posting.account):
+                        continue
+                    balances[bucket][month].add_position(posting)
+
+            else:
+                for posting in entry.postings:
+                    if posting.units.currency != self.currency:
+                        continue
+                    if be.is_budget_account(posting.account):
+                        continue
+                    # TODO Warn of any assets / liabilities left
+
+                    # TODO
+                    balances[posting.account][month].add_position(posting)
 
         return balances
 

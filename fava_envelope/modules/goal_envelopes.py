@@ -82,7 +82,7 @@ class EnvelopeWrapper:
 
         goals = BeancountGoal(entries, errors, options, module.currency)
         self.income_tables, self.envelope_tables, current_month = module.envelope_tables()
-        self.actual_accounts = goals.get_merged(module.budget_accounts, module.date_start, module.date_end)
+        self.actual_accounts = goals.get_merged(module, module.date_start, module.date_end)
         merged_envelope_tables = merge_envelope_tables(module.mappings, self.envelope_tables, self.actual_accounts)
         self.envelope_tables_with_goals = goals.compute_targets(merged_envelope_tables)
         self.mapped_accounts = map_accounts_to_bucket(module.mappings, self.actual_accounts.index)

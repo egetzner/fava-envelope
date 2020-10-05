@@ -28,8 +28,14 @@ def main():
     ext = BeancountEnvelope(entries, errors, options_map)
     df1, df2, cm = ext.envelope_tables()
 
+    logging.info(df1.loc['Avail Income'])
+    logging.info(df2.xs(axis=1, key='activity', level=1).loc['IncomeDeductions'])
+
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
-    logging.info(ge.mapped_accounts)
+    logging.info(ge.mapped_accounts.get('Income'))
+    logging.info(ge.mapped_accounts.get('IncomeDeductions'))
+
+
 
     if len(errors) == 0:
         logging.debug('no errors found')

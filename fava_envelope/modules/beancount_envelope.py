@@ -187,6 +187,22 @@ class BeancountEnvelope:
 
         return self.income_df, self.envelope_df, self.current_month
 
+    def is_income(self, account):
+        account_type = account_types.get_account_type(account)
+        return account_type == self.acctypes.income
+
+    def is_budget_account(self, account):
+        if any(regexp.match(account) for regexp in self.budget_accounts):
+            return True
+        return False
+
+    def _get_bucket(self, account):
+        for regexp, target_account in self.mappings:
+            if regexp.match(account):
+                return target_account
+
+        return account
+
     def _calculate_budget_activity(self):
 
         # Accumulate expenses for the period
@@ -205,35 +221,34 @@ class BeancountEnvelope:
             all_months.add(month)
 
             # TODO
-            contains_budget_accounts = False
-            for posting in entry.postings:
-                if any(regexp.match(posting.account) for regexp in self.budget_accounts):
-                    contains_budget_accounts = True
-                    break
-
-            if not contains_budget_accounts:
+            if not any(self.is_budget_account(p.account) for p in entry.postings):
                 continue
 
-            for posting in entry.postings:
+            #use net income:
+            if any(self.is_income(p.account) for p in entry.postings):
+                bucket = "Income"
+                for posting in entry.postings:
+                    if posting.units.currency != self.currency:
+                        continue
+                    if self.is_budget_account(posting.account):
+                        continue
+                    balances[bucket][month].add_position(posting)
+            else:
+                for posting in entry.postings:
+                    if posting.units.currency != self.currency:
+                        continue
+                    if self.is_budget_account(posting.account):
+                        continue
 
-                account = posting.account
-                for regexp, target_account in self.mappings:
-                    if regexp.match(account):
-                        account = target_account
-                        break
+                    bucket = self._get_bucket(posting.account)
 
-                account_type = account_types.get_account_type(account)
-                if posting.units.currency != self.currency:
-                    continue
+                    if self.is_income(bucket):
+                        raise ValueError('no income allowed here')
 
-                if account_type == self.acctypes.income:
-                    account = "Income"
-                elif any(regexp.match(posting.account) for regexp in self.budget_accounts):
-                    continue
-                # TODO WARn of any assets / liabilities left
+                    # TODO Warn of any assets / liabilities left
 
-                # TODO
-                balances[account][month].add_position(posting)
+                    # TODO
+                    balances[bucket][month].add_position(posting)
 
         # Reduce the final balances to numbers
         sbalances = collections.defaultdict(dict)
