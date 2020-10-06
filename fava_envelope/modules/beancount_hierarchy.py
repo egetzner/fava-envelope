@@ -124,12 +124,12 @@ def get_or_create(bucket, real_account_name):
     return real_child
 
 
-def _map_to_bucket(mappings, account):
+def map_to_bucket(mappings, name: str):
     for regexp, target_bucket in mappings:
-        if regexp.match(account):
+        if regexp.match(name):
             return target_bucket
 
-    return account
+    return name
 
 
 def map_accounts_to_bucket(mappings, accounts):
@@ -181,7 +181,7 @@ def map_df_to_buckets(mappings, df):
     all_buckets = dict()
 
     for index, row in df.iterrows():
-        bucket = _map_to_bucket(mappings, index)
+        bucket = map_to_bucket(mappings, index)
         values = row.fillna(0)
         if bucket in all_buckets:
             values = values + all_buckets[bucket]

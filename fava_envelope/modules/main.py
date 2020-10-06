@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+from fava_envelope.modules.beancount_entries import BeancountEntries
 from fava_envelope.modules.goal_envelopes import EnvelopeWrapper
 
 try:
@@ -26,7 +27,8 @@ def main():
     # Read beancount input file
     entries, errors, options_map = loader.load_file(args.filename)
     ext = BeancountEnvelope(entries, errors, options_map)
-    df1, df2, cm = ext.envelope_tables()
+    parser = BeancountEntries(entries, errors, options_map, ext.currency, ext.budget_accounts, ext.mappings)
+    df1, df2, cm = ext.envelope_tables(parser)
 
     logging.info(df1.loc['Avail Income'])
     logging.info(df2.xs(axis=1, key='activity', level=1).loc['IncomeDeductions'])

@@ -4,6 +4,8 @@ try:
 except ImportError:
     pass
 
+from fava_envelope.modules.beancount_entries import BeancountEntries
+
 import datetime
 import collections
 import logging
@@ -83,8 +85,7 @@ class BeancountEnvelope:
 
         return budget_accounts, mappings
 
-
-    def envelope_tables(self):
+    def envelope_tables(self, entry_parser):
 
         months = []
         date_current = self.date_start
@@ -107,11 +108,11 @@ class BeancountEnvelope:
         self.income_df = pd.DataFrame(columns=months)
 
         # Create Envelopes DataFrame
-        column_index = pd.MultiIndex.from_product([months, ['budgeted', 'activity', 'available']], names=['Month','col'])
+        column_index = pd.MultiIndex.from_product([months, ['activity', 'budgeted', 'available']], names=['Month','col'])
         self.envelope_df = pd.DataFrame(columns=column_index)
         self.envelope_df.index.name = "Envelopes"
 
-        self._calculate_budget_activity()
+        self._calculate_budget_activity(entry_parser)
         self._calc_budget_budgeted()
 
         # Calculate Starting Balance Income
@@ -203,89 +204,20 @@ class BeancountEnvelope:
 
         return account
 
-    def _calculate_budget_activity(self):
+    def _calculate_budget_activity(self, entry_parser: BeancountEntries):
+        actual_expenses = entry_parser.parse_transactions(start=self.date_start, end=self.date_end)
+        only_buckets = actual_expenses.sum(level=0, axis=0)
 
-        # Accumulate expenses for the period
-        balances = collections.defaultdict(
-            lambda: collections.defaultdict(inventory.Inventory))
-        all_months = set()
-
-        for entry in data.filter_txns(self.entries):
-
-            # Check entry in date range
-            if entry.date < self.date_start or entry.date > self.date_end:
-                continue
-
-            month = (entry.date.year, entry.date.month)
-            # TODO domwe handle no transaction in a month?
-            all_months.add(month)
-
-            # TODO
-            if not any(self.is_budget_account(p.account) for p in entry.postings):
-                continue
-
-            #use net income:
-            if any(self.is_income(p.account) for p in entry.postings):
-                bucket = "Income"
-                for posting in entry.postings:
-                    if posting.units.currency != self.currency:
-                        continue
-                    if self.is_budget_account(posting.account):
-                        continue
-                    balances[bucket][month].add_position(posting)
-            else:
-                for posting in entry.postings:
-                    if posting.units.currency != self.currency:
-                        continue
-                    if self.is_budget_account(posting.account):
-                        continue
-
-                    bucket = self._get_bucket(posting.account)
-
-                    if self.is_income(bucket):
-                        raise ValueError('no income allowed here')
-
-                    # TODO Warn of any assets / liabilities left
-
-                    # TODO
-                    balances[bucket][month].add_position(posting)
-
-        # Reduce the final balances to numbers
-        sbalances = collections.defaultdict(dict)
-        for account, months in sorted(balances.items()):
-            for month, balance in sorted(months.items()):
-                year, mth = month
-                date = datetime.date(year, mth, 1)
-                balance = balance.reduce(convert.get_value, self.price_map, date)
-                balance = balance.reduce(
-                    convert.convert_position, self.currency, self.price_map, date)
-                try:
-                    pos = balance.get_only_position()
-                except AssertionError:
-                    print(balance)
-                    raise
-                total = pos.units.number if pos and pos.units else None
-                sbalances[account][month] = total
-
-        # Pivot the table
-        header_months = sorted(all_months)
-        header = ['account'] + ['{}-{:02d}'.format(*m) for m in header_months]
+        income_columns = ['Income', 'Income:Deduction']
         self.income_df.loc["Avail Income", :] = Decimal(0.00)
 
-        for account in sorted(sbalances.keys()):
-            for month in header_months:
-                total = sbalances[account].get(month, None)
-                temp = total.quantize(self.Q) if total else 0.00
-                # swap sign to be more human readable
-                temp *= -1
-
-                month_str = f"{str(month[0])}-{str(month[1]).zfill(2)}"
-                if account == "Income":
-                    self.income_df.loc["Avail Income",month_str] = Decimal(temp)
+        for month in only_buckets.columns:
+            for index, row in only_buckets.iterrows():
+                if index in income_columns:
+                    self.income_df.loc["Avail Income", month] += row[month]
                 else:
-                    self.envelope_df.loc[account,(month_str,'budgeted')] = Decimal(0.00)
-                    self.envelope_df.loc[account,(month_str,'activity')] = Decimal(temp)
-                    self.envelope_df.loc[account,(month_str,'available')] = Decimal(0.00)
+                    self.envelope_df.loc[index, (month, 'activity')] = row[month]
+
 
     def _calc_budget_budgeted(self):
         rows = {}

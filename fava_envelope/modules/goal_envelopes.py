@@ -5,6 +5,7 @@ import logging
 import datetime
 from collections import defaultdict as ddict
 
+from fava_envelope.modules.beancount_entries import BeancountEntries
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
 from fava_envelope.modules.beancount_goals import BeancountGoal
 from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, map_accounts_to_bucket, map_df_to_buckets, merge_envelope_tables
@@ -80,9 +81,15 @@ class EnvelopeWrapper:
         if not self.initialized:
             return
 
+        parser = BeancountEntries(entries, errors, options,
+                                   currency=module.currency,
+                                   budget_accounts=module.budget_accounts,
+                                   mappings=module.mappings)
+
+        self.income_tables, self.envelope_tables, current_month = module.envelope_tables(parser)
+
         goals = BeancountGoal(entries, errors, options, module.currency)
-        self.income_tables, self.envelope_tables, current_month = module.envelope_tables()
-        self.actual_accounts = goals.get_merged(module, module.date_start, module.date_end)
+        self.actual_accounts = goals.get_merged(parser, module.date_start, module.date_end)
         merged_envelope_tables = merge_envelope_tables(module.mappings, self.envelope_tables, self.actual_accounts)
         self.envelope_tables_with_goals = goals.compute_targets(merged_envelope_tables)
         self.mapped_accounts = map_accounts_to_bucket(module.mappings, self.actual_accounts.index)
