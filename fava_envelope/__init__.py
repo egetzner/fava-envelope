@@ -35,7 +35,7 @@ class EnvelopeBudget(FavaExtensionBase):
                 self.ledger.errors,
                 self.ledger.options
             )
-            self.income_tables, self.envelope_tables, self.current_month = module.envelope_tables()
+            self.income_tables, self.envelope_tables, _, self.current_month = module.envelope_tables()
 
         except:
             self.ledger.errors.append(LoadError(data.new_metadata("<fava-envelope>", 0), traceback.format_exc(), None))

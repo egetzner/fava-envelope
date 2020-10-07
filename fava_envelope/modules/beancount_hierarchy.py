@@ -4,6 +4,7 @@ import traceback
 import pandas as pd
 
 from beancount.core import inventory, account
+from cdecimal import Decimal
 
 
 class Bucket(dict):
@@ -177,22 +178,8 @@ def get_hierarchy(buckets, buckets_with_accounts, include_children):
     return [list(acc.values())[0] for acc in roots.values()]
 
 
-def map_df_to_buckets(mappings, df):
-    all_buckets = dict()
-
-    for index, row in df.iterrows():
-        bucket = map_to_bucket(mappings, index)
-        values = row.fillna(0)
-        if bucket in all_buckets:
-            values = values + all_buckets[bucket]
-
-        all_buckets[bucket] = values
-
-    return pd.DataFrame(all_buckets).transpose().sort_index()
-
-
-def merge_envelope_tables(mappings, edf, adf):
-    madf = map_df_to_buckets(mappings, adf)
-    mrg = pd.concat([edf, madf.xs(level=1, key='goals', axis=1, drop_level=False)], axis=1)
-    return mrg.fillna(0)
-
+def from_accounts_to_hierarchy(mappings, hierarchy_df, accounts_df):
+    df = pd.DataFrame(index=hierarchy_df.index)
+    accounts_df.index.name = 'account'
+    #TODO: possibly add mappings if we're missing some! (check if there are any empty buckets!)
+    return df.join(accounts_df)

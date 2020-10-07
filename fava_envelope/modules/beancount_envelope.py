@@ -4,8 +4,6 @@ try:
 except ImportError:
     pass
 
-from fava_envelope.modules.beancount_entries import BeancountEntries
-
 import datetime
 import collections
 import logging
@@ -16,8 +14,6 @@ from dateutil.relativedelta import relativedelta
 from beancount.core.number import Decimal
 from beancount.core import data
 from beancount.core import prices
-from beancount.core import convert
-from beancount.core import inventory
 from beancount.core import account_types
 from beancount.query import query
 from beancount.core.data import Custom
@@ -109,10 +105,12 @@ class BeancountEnvelope:
 
         # Create Envelopes DataFrame
         column_index = pd.MultiIndex.from_product([months, ['activity', 'budgeted', 'available']], names=['Month','col'])
+        #row_index = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['bucket', 'account'])
         self.envelope_df = pd.DataFrame(columns=column_index)
         self.envelope_df.index.name = "Envelopes"
 
-        self._calculate_budget_activity(entry_parser)
+        self.actual_expenses = entry_parser.parse_transactions(start=self.date_start, end=self.date_end)
+        self._calculate_budget_activity(self.actual_expenses)
         self._calc_budget_budgeted()
 
         # Calculate Starting Balance Income
@@ -186,16 +184,11 @@ class BeancountEnvelope:
         for index, month in enumerate(months):
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
-        return self.income_df, self.envelope_df, self.current_month
+        return self.income_df, self.envelope_df, self.actual_expenses, self.current_month
 
     def is_income(self, account):
         account_type = account_types.get_account_type(account)
         return account_type == self.acctypes.income
-
-    def is_budget_account(self, account):
-        if any(regexp.match(account) for regexp in self.budget_accounts):
-            return True
-        return False
 
     def _get_bucket(self, account):
         for regexp, target_account in self.mappings:
@@ -204,20 +197,25 @@ class BeancountEnvelope:
 
         return account
 
-    def _calculate_budget_activity(self, entry_parser: BeancountEntries):
-        actual_expenses = entry_parser.parse_transactions(start=self.date_start, end=self.date_end)
-        only_buckets = actual_expenses.sum(level=0, axis=0)
+    def _calculate_budget_activity(self, actual_expenses: pd.DataFrame):
+        buckets_only = actual_expenses.sum(level=0, axis=0)
 
         income_columns = ['Income', 'Income:Deduction']
         self.income_df.loc["Avail Income", :] = Decimal(0.00)
 
-        for month in only_buckets.columns:
-            for index, row in only_buckets.iterrows():
+        for month in buckets_only.columns:
+            for index, row in buckets_only.iterrows():
                 if index in income_columns:
                     self.income_df.loc["Avail Income", month] += row[month]
                 else:
                     self.envelope_df.loc[index, (month, 'activity')] = row[month]
 
+    def get_bucket_or_none(self, account):
+        for regexp, target_account in self.mappings:
+            if regexp.match(account):
+                return target_account
+
+        return None
 
     def _calc_budget_budgeted(self):
         rows = {}
@@ -225,4 +223,5 @@ class BeancountEnvelope:
             if isinstance(e, Custom) and e.type == "envelope":
                 if e.values[0].value == "allocate":
                     month = f"{e.date.year}-{e.date.month:02}"
-                    self.envelope_df.loc[e.values[1].value,(month,'budgeted')] = Decimal(e.values[2].value)
+                    bucket = e.values[1].value
+                    self.envelope_df.loc[bucket, (month, 'budgeted')] = Decimal(e.values[2].value)

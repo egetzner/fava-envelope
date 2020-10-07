@@ -13,7 +13,7 @@ from beancount.core.number import Decimal, D
 from beancount.core import data
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
-from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, map_accounts_to_bucket, map_df_to_buckets
+from fava_envelope.modules.beancount_hierarchy import Bucket
 from fava_envelope.modules.goal_envelopes import EnvelopeWrapper, AccountRow
 
 from datetime import date
@@ -114,7 +114,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
     def make_table(self, period, show_accounts):
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
         try:
-            logging.info(f"period: {period}, show accounts: {show_accounts}")
+            #logging.info(f"period: {period}, show accounts: {show_accounts}")
             return self._make_table(period, show_accounts)
         except:
             self.ledger.errors.append(
