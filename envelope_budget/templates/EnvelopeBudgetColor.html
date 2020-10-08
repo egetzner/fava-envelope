@@ -140,6 +140,9 @@
               {% endif %}
               {{ extension.format_amount(goal, show_if_zero=False) }}
           </span>
+          <span class="balance-children">
+              {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
+          </span>
         </span>
 
         {% if extension._is_real_account(account)%}

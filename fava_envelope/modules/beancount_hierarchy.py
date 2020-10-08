@@ -9,9 +9,9 @@ from cdecimal import Decimal
 
 class Bucket(dict):
 
-    __slots__ = ('account', 'balance')
+    __slots__ = ('account', 'is_real', 'balance')
 
-    def __init__(self, account_name, *args, **kwargs):
+    def __init__(self, account_name, is_real=False, *args, **kwargs):
         """Create a RealAccount instance.
 
         Args:
@@ -20,6 +20,7 @@ class Bucket(dict):
         super().__init__(*args, **kwargs)
         assert isinstance(account_name, str)
         self.account = account_name
+        self.is_real = is_real
         self.balance = inventory.Inventory()
 
     def __eq__(self, other):
@@ -109,7 +110,7 @@ def get_or_create_with_hierarchy(real_account, account_name):
         path.append(component)
         real_child = real_account.get(component, None)
         if real_child is None:
-            real_child = Bucket(account.join(*path))
+            real_child = Bucket(account.join(*path), is_real=False)
             real_account[component] = real_child
         real_account = real_child
     return real_account
@@ -120,7 +121,7 @@ def get_or_create(bucket, real_account_name):
         raise ValueError
     real_child = bucket.get(real_account_name, None)
     if real_child is None:
-        real_child = Bucket(real_account_name)
+        real_child = Bucket(real_account_name, is_real=True)
         bucket[real_account_name] = real_child
     return real_child
 
@@ -162,7 +163,7 @@ def get_hierarchy(buckets, buckets_with_accounts, include_children):
     roots = {}
     for name in sorted(buckets):
         root_name = name.split(':')[0]
-        root = roots.get(root_name, Bucket(root_name))
+        root = roots.get(root_name, Bucket(root_name, False))
         bucket = get_or_create_with_hierarchy(root, name)
         if include_children:
             contained_accounts = buckets_with_accounts.get(name)
@@ -181,5 +182,17 @@ def get_hierarchy(buckets, buckets_with_accounts, include_children):
 def from_accounts_to_hierarchy(mappings, hierarchy_df, accounts_df):
     df = pd.DataFrame(index=hierarchy_df.index)
     accounts_df.index.name = 'account'
-    #TODO: possibly add mappings if we're missing some! (check if there are any empty buckets!)
-    return df.join(accounts_df)
+
+    # 1. check which accounts are already mapped:
+    known_accounts = set(hierarchy_df.index.get_level_values(level=1))
+    accounts_to_match = set(accounts_df.index.values)
+
+    df = df.join(accounts_df)
+    unmatched_accounts = accounts_to_match.difference(known_accounts)
+
+    for name in unmatched_accounts:
+        bucket = map_to_bucket(mappings, name)
+        row = accounts_df.loc[name]
+        df.loc[(bucket, name), :] = row
+
+    return df

@@ -35,11 +35,8 @@ def main():
 
     data = ge.get_inventories('2020-01', include_real_accounts=True)
 
-    for k in data.values.keys():
-        logging.info(k)
-
-    logging.info(ge.mapped_accounts.get('Income'))
-    logging.info(ge.mapped_accounts.get('IncomeDeductions'))
+    for a in data.accounts:
+        logging.info(a.account)
 
     if len(errors) == 0:
         logging.debug('no errors found')

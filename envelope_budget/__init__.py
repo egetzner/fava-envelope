@@ -186,24 +186,16 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         amount: Amount = inventory.get_currency_units(currency)
         return amount
 
-    def _account_row(self, a):
-        if isinstance(a, Bucket):
-            a = a.account
-        return self.current_period.values[a]
-
     def __get_row(self, a, name):
-        row: AccountRow = self._account_row(a)
+        row: AccountRow = self.current_period.account_row(a)
         return row.get(name)
 
     def _row(self, rows, a):
         d: Inventory = self.__get_row(a, rows)
         return -self._only_position(d)
 
-    def __get_rows(self, a):
-        if isinstance(a, Bucket):
-            a = a.account
-        values = self.current_period.values
-        return [values[ar] for ar in values.keys() if ar.startswith(a)]
+    def __get_rows(self, acc):
+        return self.current_period.get_matching_rows(acc)
 
     def _row_children(self, rows, a):
         sum = Inventory()

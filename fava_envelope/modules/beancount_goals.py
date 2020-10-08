@@ -23,9 +23,9 @@ def _date_to_string(x):
     return f"{x.year}-{str(x.month).zfill(2)}"
 
 
-def compute_targets(tables, goals_with_buckets):
+def compute_targets(tables, all_activity, goals_with_buckets):
     goals = goals_with_buckets.sum(axis=0, level=0)
-    spent = tables.xs(key='activity', level=1, axis=1)
+    spent = all_activity.sum(axis=0, level=0)  # tables.xs(key='activity', level=1, axis=1)
     budgeted = tables.xs(key='budgeted', level=1, axis=1)
     available = tables.xs(key='available', level=1, axis=1)
     originally_available = available + spent*-1
@@ -48,14 +48,6 @@ class BeancountGoal:
 
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
-
-    def get_merged(self, module: BeancountEntries, start, end):
-        gdf = self.parse_fava_budget(start_date=start, end_date=end)
-        act = module.parse_transactions(start, end)
-
-        mrg = pd.concat({'goals': gdf, 'activity': act.sum(level=1, axis=0)}, axis=1)
-        mrg = mrg.swaplevel(0, 1, axis=1).reindex()
-        return mrg.sort_index().fillna(0)
 
     def parse_fava_budget(self, start_date, end_date):
         custom = [e for e in self.entries if isinstance(e, Custom)]
