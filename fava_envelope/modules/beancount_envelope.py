@@ -23,13 +23,13 @@ BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, errors, options_map, start_date=None, future_months=0, future_rollover=False, show_real_accounts=True):
+    def __init__(self, entries, errors, options_map, start_date=None, future_months=1, future_rollover=False, show_real_accounts=True):
 
         self.entries = entries
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
-        self.budget_accounts, self.mappings = self._find_envelop_settings()
+        self.budget_accounts, self.mappings, max_date = self._find_envelop_settings()
         self.show_real_accounts = show_real_accounts
 
         decimal_precison = '0.00'
@@ -43,7 +43,8 @@ class BeancountEnvelope:
         self.date_start = datetime.date(today.year, 1, 1) if start_date is None else start_date
 
         # Compute end of period
-        self.date_end = today + relativedelta(months=future_months)
+        max_date = today if max_date is None else max_date
+        self.date_end = max_date + relativedelta(months=future_months)
         self.future_rollover = future_rollover
 
         self.price_map = prices.build_price_map(entries)
@@ -60,10 +61,11 @@ class BeancountEnvelope:
         logging.warning(f"invalid operating currency: {currency}, defaulting to {default_currency}")
         return default_currency
 
-
     def _find_envelop_settings(self):
         budget_accounts= []
         mappings = []
+
+        allocation_dates = set()
 
         for e in self.entries:
             if isinstance(e, Custom) and e.type == "envelope":
@@ -75,11 +77,15 @@ class BeancountEnvelope:
                         e.values[2].value
                     )
                     mappings.append(map_set)
+                if e.values[0].value == "allocate":
+                    allocation_dates.add(e.date)
+
+        max_date = max(allocation_dates)
 
         if len(budget_accounts) == 0:
             self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
-        return budget_accounts, mappings
+        return budget_accounts, mappings, max_date
 
     def envelope_tables(self, entry_parser):
 

@@ -4,8 +4,7 @@ import traceback
 import pandas as pd
 
 from beancount.core import inventory, account
-from cdecimal import Decimal
-
+from beancount.core.number import Decimal
 
 class Bucket(dict):
 
@@ -195,4 +194,4 @@ def from_accounts_to_hierarchy(mappings, hierarchy_df, accounts_df):
         row = accounts_df.loc[name]
         df.loc[(bucket, name), :] = row
 
-    return df
+    return df.fillna(Decimal(0.00))

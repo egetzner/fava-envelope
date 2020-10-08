@@ -35,6 +35,8 @@ def main():
 
     data = ge.get_inventories('2020-01', include_real_accounts=True)
 
+    logging.info(ge.income_tables)
+
     for a in data.accounts:
         logging.info(a.account)
 
