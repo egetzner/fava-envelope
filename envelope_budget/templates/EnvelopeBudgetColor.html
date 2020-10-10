@@ -37,6 +37,16 @@
   border-radius: 25px;
 }
 
+.tree-table .available.underfunded {
+  padding-left: 0.7em;
+  padding-right: 0.7em;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  background-color: #ff9d00;
+  color: white;
+  font-weight: bold;
+}
+
 .tree-table .available.negative {
   padding-left: 0.7em;
   padding-right: 0.7em;
@@ -53,6 +63,16 @@
   padding-top: 2px;
   padding-bottom: 2px;
   background-color: var(--color-budget-positive);
+  color: white;
+  font-weight: bold;
+}
+
+.tree-table .available.zero {
+  padding-left: 0.7em;
+  padding-right: 0.7em;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  background-color: #e0e0e0;
   color: white;
   font-weight: bold;
 }
@@ -84,7 +104,6 @@
 {% set brows = "budgeted" %}
 {% set srows = "spent" %}
 {% set vrows = "available" %}
-{% set trows = "target" %}
 
 <!--
 -->
@@ -123,21 +142,14 @@
             </a>
         {% endif %}
         </span>
-        {% set goal = extension._row(grows, account) %}
-        {% set budgeted = extension._row(brows, account) %}
-        {% set spent = extension._row(srows, account) %}
-        {% set available = extension._row(vrows, account) %}
-        {% set target = extension._row(trows, account) %}
+        {% set account_row = extension.account_row(account) %}
+        {% set goal = extension._value(account_row.goal) %}
+        {% set budgeted = extension._value(account_row.budgeted) %}
+        {% set spent = extension._value(account_row.spent) %}
+        {% set available = extension._value(account_row.available) %}
 
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
-              {% if goal.number != 0 and not extension._is_real_account(account) %}
-                  {% if target.number <= 0 %}
-                    &#x2714;
-                    {% else%}
-                    &#x2B55;
-                  {% endif %}
-              {% endif %}
               {{ extension.format_amount(goal, show_if_zero=False) }}
           </span>
           <span class="balance-children">
@@ -145,7 +157,7 @@
           </span>
         </span>
 
-        {% if extension._is_real_account(account)%}
+        {% if account_row.is_non_budget() %}
         <span class="num"></span>
         {% else %}
         <span class="num {{ 'has-balance' if budgeted else '' }}">
@@ -166,30 +178,42 @@
         <span class="num {{ 'has-balance' if spent else '' }}">
           <span class="balance spent {{ 'negative' if spent.number < 0 else 'positive' if spent.number > 0 else '' }}">
             <a href="{{ url_for('account', name=account.account, time=period) }}">
-              {{ extension.format_amount(spent) }}
+              {{ extension.format_amount(spent, show_if_zero=False) }}
             </a>
           </span>
           <span class="balance-children ">
             <a href="{{ url_for('account', name=account.account, time=period) }}">
-              {{ extension.format_amount(extension._row_children(srows, account), show_if_zero=True) }}
+              {{ extension.format_amount(extension._row_children(srows, account), show_if_zero=False) }}
             </a>
           </span>
         </span>
 
-        {% if extension._is_real_account(account)%}
+        {% if account_row.is_non_budget() %}
             <span class="num"></span>
         {% else %}
             <span class="num {{ 'has-balance' if available else '' }}">
-              <span class="balance">
-                <span class="number available {{ 'negative' if available.number < 0 else 'positive' if available.number > 0 else '' }}">
-                  {{ extension.format_amount(available) }}
-                </span>
-              </span>
-              <span class="balance-children">
-                <span class="number available {{ 'negative' if available.number < 0 else 'positive' if available.number > 0 else '' }}">
-                    {{ extension.format_amount(extension._row_children(vrows, account), show_if_zero=True) }}
+                {% if extension._show_sum(account) %}
+                  <span class="balance-children">
+                    <span class="number available {{ 'negative' if available.number < 0 else 'positive' if available.number > 0 else '' }}">
+                        {{ extension.format_amount(extension._row_children(vrows, account), show_if_zero=extension._has_children(account)) }}
+                      </span>
                   </span>
-              </span>
+                {% else %}
+                  <span class="balance">
+                    <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.has_goal and not account_row.is_funded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
+                      {% if not extension._is_real_account(account) and account_row.has_goal %}
+                        {% if available.number >= 0 %}
+                          {% if account_row.is_funded %}
+                            &#x2714;
+                            {% else%}
+                            &#x1F785;
+                          {% endif %}
+                        {% endif %}
+                      {% endif %}
+                      {{ extension.format_amount(available, show_if_zero=not extension._has_children(account)) }}
+                    </span>
+                  </span>
+                {% endif %}
             </span>
        {% endif %}
   </p>

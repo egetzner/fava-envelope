@@ -23,16 +23,29 @@ def _date_to_string(x):
     return f"{x.year}-{str(x.month).zfill(2)}"
 
 
-def compute_targets(tables, all_activity, goals_with_buckets):
+def compute_targets(tables, all_activity, goals_with_buckets, current_month):
     goals = goals_with_buckets.sum(axis=0, level=0)
     spent = all_activity.sum(axis=0, level=0)  # tables.xs(key='activity', level=1, axis=1)
     budgeted = tables.xs(key='budgeted', level=1, axis=1)
     available = tables.xs(key='available', level=1, axis=1)
-    originally_available = available + spent*-1
-    target = goals - originally_available
-    target.name = 'target'
-    merged = pd.concat({'budgeted':budgeted, 'activity':spent, 'available':available, 'goals':goals, 'target':target}, axis=1)
-    df = merged.swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1).fillna(0)
+    avail_som = available.add(spent*-1)
+
+    funded = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
+                        budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
+    funded = funded.fillna(Decimal(0.00))
+    to_be_funded = goals.add(funded * -1).dropna()
+    tbf = funded[to_be_funded != 0].div(goals)
+    tbf[to_be_funded == 0] = 1
+    progress = tbf.astype('float').round(decimals=2)
+    is_funded = progress >= 1
+
+    merged = pd.concat({'budgeted': budgeted,
+                        'activity': spent,
+                        'available': available,
+                        'goals': goals,
+                        'goal_funded': is_funded,
+                        'goal_progress': progress}, axis=1)
+    df = merged.swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1)#.fillna(0)
     return df
 
 

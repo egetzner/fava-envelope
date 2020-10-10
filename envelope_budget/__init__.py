@@ -183,23 +183,21 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         amount: Amount = inventory.get_currency_units(currency)
         return amount
 
-    def __get_row(self, a, name):
-        row: AccountRow = self.current_period.account_row(a)
-        return row.get(name)
+    def account_row(self, a):
+        return self.current_period.account_row(a)
 
-    def _row(self, rows, a):
-        d: Inventory = self.__get_row(a, rows)
-        return -self._only_position(d)
-
-    def __get_rows(self, acc):
-        return self.current_period.get_matching_rows(acc)
+    def _value(self, inventory: Inventory):
+        return -self._only_position(inventory)
 
     def _row_children(self, rows, a):
         sum = Inventory()
-        all_matching = self.__get_rows(a)
+        all_matching = self.current_period.get_matching_rows(a)
         for sub in all_matching:
             sum.add_inventory(sub.get(rows))
         return -self._only_position(sum.reduce(convert.get_weight))
+
+    def _show_sum(self, a):
+        return len(self.current_period.get_matching_rows(a)) > 1
 
     def _has_children(self, a):
         return sum(self._is_visible(c) for c in a.values())

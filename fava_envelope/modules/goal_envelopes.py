@@ -13,7 +13,7 @@ from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, fro
 
 
 def _add_amount(inventory, value, currency='EUR'):
-    if value != 0:
+    if not pd.isna(value) and value != 0:
         inventory.add_amount(Amount(-value, currency))
 
 class AccountRow:
@@ -28,7 +28,34 @@ class AccountRow:
         self.spent: Inventory = Inventory()
         self.target: Inventory = Inventory()
 
+        self.has_goal = False
+        self.goal_progress = None
+        self.is_funded = None
+
+        self.in_budget = True
+
         self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available, 'target': self.target})
+
+    def is_non_budget(self):
+        return self.is_real or not self.in_budget
+
+    def set_values(self, e_row):
+        avail = e_row.available
+        budget = e_row.budgeted
+        activity = e_row.activity
+        goal = e_row.goals
+
+        if pd.isna(avail) and pd.isna(budget):
+            self.in_budget = False
+
+        _add_amount(self.available, avail)
+        _add_amount(self.budgeted, budget)
+        _add_amount(self.spent, activity)
+        _add_amount(self.goal, goal)
+
+        self.goal_progress = e_row['goal_progress']
+        self.is_funded = e_row['goal_funded']
+        self.has_goal = not pd.isna(goal) and goal != 0
 
     def get(self, name):
         if isinstance(name, str):
@@ -109,11 +136,10 @@ class EnvelopeWrapper:
                                    mappings=module.mappings)
 
         self.income_tables, envelope_tables, all_activity, current_month = module.envelope_tables(parser)
-
         bg = BeancountGoal(entries, errors, options, module.currency)
         goals = bg.parse_fava_budget(module.date_start, module.date_end)
         goals_with_buckets = from_accounts_to_hierarchy(module.mappings, all_activity, goals)
-        self.bucket_data = compute_targets(envelope_tables, all_activity, goals_with_buckets)
+        self.bucket_data = compute_targets(envelope_tables, all_activity, goals_with_buckets, current_month)
         multi_level_index = goals_with_buckets
         self.mapped_accounts = multi_level_index.groupby(level=0).apply(lambda df: list(df.index.get_level_values(level=1).values)).to_dict()
         self.account_data = pd.concat({'activity': all_activity, 'goals': goals_with_buckets}, axis=1).swaplevel(1, 0, axis=1)
@@ -144,12 +170,7 @@ class EnvelopeWrapper:
                 account_row = bucket_values[index]
                 account_row.name = index
                 account_row.is_bucket = True
-
-                _add_amount(account_row.available, e_row["available"])
-                _add_amount(account_row.budgeted, e_row["budgeted"])
-                _add_amount(account_row.spent, e_row["activity"])
-                _add_amount(account_row.goal, e_row["goals"])
-                _add_amount(account_row.target, e_row["target"])
+                account_row.set_values(e_row)
 
             if self.account_data is not None and period in self.account_data.columns:
                 accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
