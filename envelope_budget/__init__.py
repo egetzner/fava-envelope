@@ -136,9 +136,6 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             month = today.month
             period = f'{year:04}-{month:02}'
 
-        # TODO: check what this is neeeded for
-        self.open_close_map = getters.get_account_open_close(self.ledger.all_entries)
-
         self.period_start = datetime.date(year, month, 1)
         self.period_end = datetime.date(year + month // 12, month % 12 + 1, 1)
 
@@ -204,18 +201,14 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             sum.add_inventory(sub.get(rows))
         return -self._only_position(sum.reduce(convert.get_weight))
 
-    def _has_children(self, a, period):
-        return sum(self._is_open(c) and self._is_visible(c, period) for c in a.values())
+    def _has_children(self, a):
+        return sum(self._is_visible(c) for c in a.values())
 
     def _is_real_account(self, a):
         is_real = a.account in self.ledger.accounts.keys()
         return is_real
 
-    def _is_open(self, a):
-        open, close = self.open_close_map.get(a.account, (None, None))
-        return (open is None or open.date < self.period_end) and (close is None or close.date > self.period_start)
-
-    def _is_visible(self, a, period):
+    def _is_visible(self, a):
         return self.current_period.is_visible(a, show_real=self.display_real_accounts)
 
     def _period_for(self, date):

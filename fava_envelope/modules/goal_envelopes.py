@@ -28,7 +28,7 @@ class AccountRow:
         self.spent: Inventory = Inventory()
         self.target: Inventory = Inventory()
 
-        self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available})
+        self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available, 'target': self.target})
 
     def get(self, name):
         if isinstance(name, str):

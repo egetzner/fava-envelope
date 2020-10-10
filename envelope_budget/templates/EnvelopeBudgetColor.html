@@ -103,17 +103,17 @@
         </p>
     </li>
 {% set ns = namespace(rown=1) %}
-{% for account in data.accounts if extension._is_open(account) and extension._is_visible(account, period) recursive %}
-{% set ns.rown = 1 if extension._has_children(account, period) else 1 - ns.rown %}
+{% for account in data.accounts if extension._is_visible(account) recursive %}
+{% set ns.rown = 1 if extension._has_children(account) else 1 - ns.rown %}
 <li{{ ' class=toggled' if account.account|collapse_account else '' }}>
   <p class="row-{{ns.rown}}
-     {{- ' group-row' if extension._has_children(account, period) else '' -}}"
+     {{- ' group-row' if extension._has_children(account) else '' -}}"
      {%- if loop.depth0 == 0 %} style="margin-top: 10px;"{% endif %}>
     <span class="account-cell depth-{{ loop.depth0 }} droptarget
-    {{- '' if not extension._has_children(account, period) else ' has-children'}}
+    {{- '' if not extension._has_children(account) else ' has-children'}}
     " data-account-name="{{ account.account }}">
         {% if extension._is_real_account(account)%}
-            {% if extension._has_children(account, period) %}<span class="expander"></span>{% endif %}
+            {% if extension._has_children(account) %}<span class="expander"></span>{% endif %}
             <a href="{{ url_for('account', name=account.account, time=period) }}" class="account">
               {{ extension._name(account) }}
             </a>

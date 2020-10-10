@@ -32,8 +32,13 @@ def main():
     #logging.info(df2.xs(axis=1, key='activity', level=1))
 
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
+    logging.info(ext.envelope_df.loc['WishFarm:Bellicon', '2020-10'])
+    logging.info(ext.envelope_df.loc['WishFarm:Bellicon', '2020-11'])
+    logging.info(ext.actual_expenses)
 
-    data = ge.get_inventories('2020-01', include_real_accounts=True)
+    data = ge.get_inventories('2020-11', include_real_accounts=True)
+
+    logging.info(data.account_row('WishFarm:Bellicon'))
 
     logging.info(ge.income_tables)
 
