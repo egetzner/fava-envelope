@@ -80,7 +80,11 @@ class BeancountEnvelope:
                 if e.values[0].value == "allocate":
                     allocation_dates.add(e.date)
 
-        max_date = max(allocation_dates)
+        if len(allocation_dates) == 0:
+            logging.warning("No envelope entries found")
+            max_date = None
+        else:
+            max_date = max(allocation_dates)
 
         if len(budget_accounts) == 0:
             self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))

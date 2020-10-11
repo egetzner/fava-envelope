@@ -77,6 +77,7 @@ class AccountRow:
     def set_account_row(self, name, row):
         self.name = name
         self.is_real = True
+        self.in_budget = False
         self.row_type = RowType.ACCOUNT
 
         _add_amount(self.spent, row["activity"])
@@ -124,6 +125,10 @@ class PeriodData:
 
         return self.bucket_values[a] if is_bucket else self.account_values[a]
 
+    def is_leaf(self, acc):
+        ar: AccountRow = self.account_row(acc)
+        return ar.row_type != RowType.CONTAINER
+
     def get_matching_rows(self, acc):
         is_bucket = True
         values = self.bucket_values
@@ -140,7 +145,7 @@ class PeriodData:
     def is_visible(self, a, show_real):
         row: AccountRow = self.account_row(a)
         if row.is_bucket or (show_real and row.is_real):
-            return True  # not row.is_empty()
+            return not row.is_empty()
 
         return True
 

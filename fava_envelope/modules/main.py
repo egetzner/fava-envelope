@@ -27,9 +27,10 @@ def main():
     ext = BeancountEnvelope(entries, errors, options_map)
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
-    logging.info(ge.bucket_data.xs(key='goals', axis=1, level=1).dropna())
+    logging.info(ge.bucket_data.xs(key='available', axis=1, level=1).dropna())
     logging.info(ge.account_data.xs(key='goals', axis=1, level=1).dropna())
-    #data = ge.get_inventories('2020-10', include_real_accounts=True)
+    data = ge.get_inventories('2020-07', include_real_accounts=True)
+    logging.info(data.account_row('Income:Deduction'))
 
     if len(errors) == 0:
         logging.debug('no errors found')

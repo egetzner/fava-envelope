@@ -196,8 +196,8 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             sum.add_inventory(sub.get(rows))
         return self._only_position(sum.reduce(convert.get_weight))
 
-    def _show_sum(self, a):
-        return len(self.current_period.get_matching_rows(a)) > 1
+    def _is_leaf(self, a):
+        return self.current_period.is_leaf(a)
 
     def _has_children(self, a):
         return sum(self._is_visible(c) for c in a.values())

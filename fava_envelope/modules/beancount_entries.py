@@ -91,9 +91,16 @@ class BeancountEntries:
                         continue
                     if self.is_budget_account(posting.account):
                         continue
-                    bucket = "Income" if self.is_income(posting.account) else "Income:Deduction"
-                    balances[(bucket, posting.account)][month].add_position(posting)
 
+                    account_type = account_types.get_account_type(posting.account)
+                    if account_type == self.acctypes.income:
+                        bucket = "Income"
+                    elif account_type == self.acctypes.expenses:
+                        bucket = "Income:Deduction"
+                    else:
+                        bucket = map_to_bucket(self.mappings, posting.account)
+
+                    balances[(bucket, posting.account)][month].add_position(posting)
             else:
                 for posting in entry.postings:
                     if posting.units.currency != self.currency:
