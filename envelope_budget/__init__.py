@@ -187,14 +187,14 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return self.current_period.account_row(a)
 
     def _value(self, inventory: Inventory):
-        return -self._only_position(inventory)
+        return self._only_position(inventory)
 
     def _row_children(self, rows, a):
         sum = Inventory()
         all_matching = self.current_period.get_matching_rows(a)
         for sub in all_matching:
             sum.add_inventory(sub.get(rows))
-        return -self._only_position(sum.reduce(convert.get_weight))
+        return self._only_position(sum.reduce(convert.get_weight))
 
     def _show_sum(self, a):
         return len(self.current_period.get_matching_rows(a)) > 1

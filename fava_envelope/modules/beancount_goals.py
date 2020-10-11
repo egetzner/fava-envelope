@@ -2,17 +2,13 @@
 from fava.core.budgets import parse_budgets, calculate_budget
 
 import logging
-import collections
 import pandas as pd
-import datetime
 from dateutil.relativedelta import relativedelta
 
 from beancount.core.number import Decimal
-from beancount.core import convert, prices, inventory, data, account_types, account
+from beancount.core import prices
 from beancount.core.data import Custom
 from beancount.parser import options
-
-from fava_envelope.modules.beancount_entries import BeancountEntries
 
 
 def _get_date_range(start, end):
@@ -28,13 +24,14 @@ def compute_targets(tables, all_activity, goals_with_buckets, current_month):
     spent = all_activity.sum(axis=0, level=0)  # tables.xs(key='activity', level=1, axis=1)
     budgeted = tables.xs(key='budgeted', level=1, axis=1)
     available = tables.xs(key='available', level=1, axis=1)
-    avail_som = available.add(spent*-1)
+    avail_som = available.add(spent.mul(-1), fill_value=Decimal(0.0))
 
     funded = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
                         budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
     funded = funded.fillna(Decimal(0.00))
-    to_be_funded = goals.add(funded * -1).dropna()
-    tbf = funded[to_be_funded != 0].div(goals)
+
+    to_be_funded = goals.add(funded.mul(-1)).dropna()
+    tbf = funded[funded != 0].div(goals[goals != 0])
     tbf[to_be_funded == 0] = 1
     progress = tbf.astype('float').round(decimals=2)
     is_funded = progress >= 1
@@ -45,7 +42,7 @@ def compute_targets(tables, all_activity, goals_with_buckets, current_month):
                         'goals': goals,
                         'goal_funded': is_funded,
                         'goal_progress': progress}, axis=1)
-    df = merged.swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1)#.fillna(0)
+    df = merged.swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1)
     return df
 
 

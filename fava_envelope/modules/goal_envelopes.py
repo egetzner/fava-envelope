@@ -14,7 +14,12 @@ from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, fro
 
 def _add_amount(inventory, value, currency='EUR'):
     if not pd.isna(value) and value != 0:
-        inventory.add_amount(Amount(-value, currency))
+        inventory.add_amount(Amount(value, currency))
+
+
+def sort_buckets(b: Bucket):
+    return "_" if b.account.startswith("Income") else b.account
+
 
 class AccountRow:
     def __init__(self):
@@ -82,8 +87,6 @@ class AccountRow:
         else:
             return f'[{acc}] Goal: {self.goal}, Budgeted: {self.budgeted}, Spent: {self.spent} = Available: {self.available}'
 
-def sort_buckets(b: Bucket):
-    return "_" if b.account.startswith("Income") else b.account
 
 class PeriodData:
     def __init__(self, period, bucket_values, account_values, accounts):
