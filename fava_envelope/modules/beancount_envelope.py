@@ -91,6 +91,18 @@ class BeancountEnvelope:
 
         return budget_accounts, mappings, max_date
 
+    def query_account_balances(self, date):
+        balance = Decimal(0.0)
+        logging.info(date)
+        query_str = f"select account, convert(sum(position),'{self.currency}') from close on {date} group by 1 order by 1;"
+        rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
+        for row in rows[1]:
+            if any(regexp.match(row[0]) for regexp in self.budget_accounts):
+                if row[1] is not None:
+                    balance += row[1]
+
+        return balance
+
     def envelope_tables(self, entry_parser=None):
 
         months = []
@@ -129,18 +141,13 @@ class BeancountEnvelope:
         self._calc_budget_budgeted()
 
         # Calculate Starting Balance Income
-        starting_balance = Decimal(0.0)
-        query_str = f"select account, convert(sum(position),'{self.currency}') from close on {months[0]}-01 group by 1 order by 1;"
-        rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
-        for row in rows[1]:
-            if any(regexp.match(row[0]) for regexp in self.budget_accounts):
-                if row[1] is not None:
-                    starting_balance += row[1]
+        starting_balance = self.query_account_balances(f'{months[0]}-01')
         self.income_df[months[0]]["Avail Income"] += starting_balance
 
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
 
-        max_index = len(months) if self.future_rollover else months.index(self.current_month)
+        curr_month_index = months.index(self.current_month)
+        max_index = len(months) if self.future_rollover else curr_month_index
 
         # Set available
         for index, row in self.envelope_df.iterrows():
