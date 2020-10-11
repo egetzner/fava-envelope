@@ -1,3 +1,4 @@
+from enum import Enum
 
 from beancount.core.inventory import Inventory, Amount
 
@@ -21,9 +22,17 @@ def sort_buckets(b: Bucket):
     return "_" if b.account.startswith("Income") else b.account
 
 
+class RowType(Enum):
+    CONTAINER = 1,
+    BUCKET = 2,
+    ACCOUNT = 3
+
+
 class AccountRow:
     def __init__(self):
         self.name: str = "<Unknown>"
+        self.row_type = RowType.CONTAINER
+
         self.is_bucket: bool = False
         self.is_real: bool = False
 
@@ -36,7 +45,6 @@ class AccountRow:
         self.has_goal = False
         self.goal_progress = None
         self.is_funded = None
-
         self.in_budget = True
 
         self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available, 'target': self.target})
@@ -44,7 +52,11 @@ class AccountRow:
     def is_non_budget(self):
         return self.is_real or not self.in_budget
 
-    def set_values(self, e_row):
+    def set_bucket_row(self, name, e_row):
+        self.name = name
+        self.is_bucket = True
+        self.row_type = RowType.BUCKET
+
         avail = e_row.available
         budget = e_row.budgeted
         activity = e_row.activity
@@ -61,6 +73,14 @@ class AccountRow:
         self.goal_progress = e_row['goal_progress']
         self.is_funded = e_row['goal_funded']
         self.has_goal = not pd.isna(goal) and goal != 0
+
+    def set_account_row(self, name, row):
+        self.name = name
+        self.is_real = True
+        self.row_type = RowType.ACCOUNT
+
+        _add_amount(self.spent, row["activity"])
+        _add_amount(self.goal, row["goals"])
 
     def get(self, name):
         if isinstance(name, str):
@@ -120,7 +140,7 @@ class PeriodData:
     def is_visible(self, a, show_real):
         row: AccountRow = self.account_row(a)
         if row.is_bucket or (show_real and row.is_real):
-            return not row.is_empty()
+            return True  # not row.is_empty()
 
         return True
 
@@ -171,20 +191,14 @@ class EnvelopeWrapper:
 
             for index, e_row in buckets_by_month.iterrows():
                 account_row = bucket_values[index]
-                account_row.name = index
-                account_row.is_bucket = True
-                account_row.set_values(e_row)
+                account_row.set_bucket_row(index, e_row)
 
             if self.account_data is not None and period in self.account_data.columns:
                 accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
 
                 for index, data in accounts_in_month.iterrows():
                     account_row = account_values[index[1]]
-                    account_row.name = index[1]
-                    #account_row.bucket = index[0]
-                    account_row.is_real = True
-                    _add_amount(account_row.spent, data["activity"])
-                    _add_amount(account_row.goal, data["goals"])
+                    account_row.set_account_row(index[1], data)
 
         acc_hierarchy = get_hierarchy(self.bucket_data.index, self.mapped_accounts, include_real_accounts)
         return PeriodData(period, bucket_values, account_values, acc_hierarchy)

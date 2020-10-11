@@ -24,7 +24,7 @@ def compute_targets(tables, all_activity, goals_with_buckets, current_month):
     spent = all_activity.sum(axis=0, level=0)  # tables.xs(key='activity', level=1, axis=1)
     budgeted = tables.xs(key='budgeted', level=1, axis=1)
     available = tables.xs(key='available', level=1, axis=1)
-    avail_som = available.add(spent.mul(-1), fill_value=Decimal(0.0))
+    avail_som = available.add(spent.mul(-1), fill_value=0)
 
     funded = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
                         budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)

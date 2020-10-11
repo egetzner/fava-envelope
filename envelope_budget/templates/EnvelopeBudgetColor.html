@@ -76,6 +76,19 @@
   color: white;
   font-weight: bold;
 }
+
+.tree-table .bucket.budget {
+  padding-left: 1em;
+  color: gray;
+  font-weight: normal;
+}
+
+.tree-table .bucket {
+  padding-left: 1em;
+  color: gray;
+  font-weight: bold;
+}
+
 </style>
 
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
@@ -88,9 +101,9 @@
       <a href="{{ url_for_current(period=extension._next_month()) }}">&gt;&gt;</a>
     </h3>
 {% if extension.display_real_accounts %}
-    <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Real Accounts</button>
+    <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
 {% else %}
-    <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True          ) }}';">Real Accounts</button>
+    <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True          ) }}';">Accounts</button>
 {% endif %}
 </div>
 
@@ -131,18 +144,18 @@
     <span class="account-cell depth-{{ loop.depth0 }} droptarget
     {{- '' if not extension._has_children(account) else ' has-children'}}
     " data-account-name="{{ account.account }}">
-        {% if extension._is_real_account(account)%}
+        {% set account_row = extension.account_row(account) %}
+        {% if extension._is_real_account(account) %}
             {% if extension._has_children(account) %}<span class="expander"></span>{% endif %}
             <a href="{{ url_for('account', name=account.account, time=period) }}" class="account">
               {{ extension._name(account) }}
             </a>
         {% else %}
-            <a class="account">
+            <span class="bucket {{ 'budget' if account_row.is_bucket else '' }} ">
               {{ extension._name(account) }}
-            </a>
+            </span>
         {% endif %}
         </span>
-        {% set account_row = extension.account_row(account) %}
         {% set goal = extension._value(account_row.goal) %}
         {% set budgeted = extension._value(account_row.budgeted) %}
         {% set spent = extension._value(account_row.spent) %}
@@ -188,9 +201,7 @@
           </span>
         </span>
 
-        {% if account_row.is_non_budget() %}
-            <span class="num"></span>
-        {% else %}
+        {% if not account_row.is_non_budget() %}
             <span class="num {{ 'has-balance' if available else '' }}">
                 {% if extension._show_sum(account) %}
                   <span class="balance-children">
