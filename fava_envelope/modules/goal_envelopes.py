@@ -49,6 +49,10 @@ class AccountRow:
 
         self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available, 'target': self.target})
 
+    @property
+    def progress(self):
+        return self.goal_progress if self.goal_progress > 0 else 0
+
     def is_non_budget(self):
         return self.is_real or not self.in_budget
 

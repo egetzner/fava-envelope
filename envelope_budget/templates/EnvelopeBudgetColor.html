@@ -89,6 +89,17 @@
   font-weight: bold;
 }
 
+.tree-table .progress {
+    display: block;
+    float: right;
+}
+
+progress[value] {
+    display:block;
+    width: auto;
+    height: 3px;
+}
+
 </style>
 
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
@@ -151,10 +162,16 @@
               {{ extension._name(account) }}
             </a>
         {% else %}
-            <span class="bucket {{ 'budget' if account_row.is_bucket else '' }} ">
+            <span class="progress bucket {{ 'budget' if account_row.is_bucket else '' }} ">
               {{ extension._name(account) }}
+              {% if account_row.in_budget and not account_row.is_funded and account_row.has_goal %}
+                  <progress max="1" value="{{account_row.progress}}">
+                        &#x1F785;
+                  </progress>
+              {% endif %}
             </span>
         {% endif %}
+
         </span>
         {% set goal = extension._value(account_row.goal) %}
         {% set budgeted = extension._value(account_row.budgeted) %}
@@ -209,7 +226,8 @@
                   <span class="balance">
                       {% if extension._is_leaf(account) %}
                         <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.has_goal and not account_row.is_funded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
-                          {% if not extension._is_real_account(account) and account_row.has_goal %}
+
+                            {% if not extension._is_real_account(account) and account_row.has_goal %}
                             {% if available.number >= 0 %}
                               {% if account_row.is_funded %}
                                 &#x2714;
