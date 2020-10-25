@@ -1,7 +1,6 @@
 
 from fava.core.budgets import parse_budgets, calculate_budget
 
-import logging
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
@@ -10,8 +9,7 @@ from beancount.core import prices
 from beancount.core.data import Custom
 from beancount.parser import options
 
-from fava_envelope.modules import goal
-
+from envelope_budget.modules.goals import goal
 
 def _get_date_range(start, end):
     return pd.date_range(start, end, freq='MS')#.to_pydatetime()

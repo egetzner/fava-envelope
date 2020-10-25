@@ -3,14 +3,13 @@ from enum import Enum
 from beancount.core.inventory import Inventory, Amount
 
 import pandas as pd
-import logging
 import datetime
 from collections import defaultdict as ddict
 
-from fava_envelope.modules.beancount_entries import BeancountEntries
+from envelope_budget.modules.hierarchy.beancount_entries import BeancountEntries
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
-from fava_envelope.modules.beancount_goals import BeancountGoal, merge_with_multihierarchy, merge_with_targets
-from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, from_accounts_to_hierarchy
+from envelope_budget.modules.goals.beancount_goals import BeancountGoal, merge_with_multihierarchy, merge_with_targets
+from envelope_budget.modules.hierarchy.beancount_hierarchy import Bucket, get_hierarchy, from_accounts_to_hierarchy
 
 
 def _add_amount(inventory, value, currency='EUR'):

@@ -5,8 +5,7 @@ from decimal import Decimal
 
 from dateutil.relativedelta import relativedelta
 
-from fava_envelope.modules.beancount_entries import BeancountEntries
-from fava_envelope.modules.goal_envelopes import EnvelopeWrapper, AccountRow
+from envelope_budget.modules.envelope_extension import EnvelopeWrapper
 
 try:
     import ipdb
@@ -14,7 +13,6 @@ try:
 except ImportError:
     pass
 
-import pandas as pd
 from beancount import loader
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope

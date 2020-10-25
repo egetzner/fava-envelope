@@ -1,8 +1,7 @@
 import argparse
 import logging
 
-from fava_envelope.modules.beancount_entries import BeancountEntries
-from fava_envelope.modules.goal_envelopes import EnvelopeWrapper, AccountRow
+from envelope_budget.modules.envelope_extension import EnvelopeWrapper
 
 try:
     import ipdb
@@ -10,7 +9,6 @@ try:
 except ImportError:
     pass
 
-import pandas as pd
 from beancount import loader
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
@@ -27,10 +25,12 @@ def main():
     ext = BeancountEnvelope(entries, errors, options_map)
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
-    logging.info(ge.bucket_data.xs(key='available', axis=1, level=1).dropna())
-    logging.info(ge.account_data.xs(key='goals', axis=1, level=1).dropna())
-    data = ge.get_inventories('2020-07', include_real_accounts=True)
-    logging.info(data.account_row('Income:Deduction'))
+    i = ge.get_inventories('2020-10', include_real_accounts=False)
+    mr = i.get_matching_rows('SinkingFund:WashingMachine')[0]
+    logging.info(mr)
+
+    mr = i.get_matching_rows('SinkingFund:WaschingMachine')[0]
+    logging.info(mr)
 
     if len(errors) == 0:
         logging.debug('no errors found')

@@ -6,6 +6,7 @@ import pandas as pd
 from beancount.core import inventory, account
 from beancount.core.number import Decimal
 
+
 class Bucket(dict):
 
     __slots__ = ('account', 'is_real', 'balance')

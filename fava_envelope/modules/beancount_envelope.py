@@ -50,7 +50,6 @@ class BeancountEnvelope:
         self.price_map = prices.build_price_map(entries)
         self.acctypes = options.get_account_types(options_map)
 
-
     def _find_currency(self, options_map):
         default_currency = 'USD'
         opt_currency = options_map.get("operating_currency")
@@ -232,7 +231,6 @@ class BeancountEnvelope:
                 else:
                     self.envelope_df.loc[index, (month, 'activity')] = row[month]
 
-
     def _calculate_budget_activity(self):
 
         # Accumulate expenses for the period
@@ -317,7 +315,6 @@ class BeancountEnvelope:
                     self.envelope_df.loc[account,(month_str,'budgeted')] = Decimal(0.00)
                     self.envelope_df.loc[account,(month_str,'activity')] = Decimal(temp)
                     self.envelope_df.loc[account,(month_str,'available')] = Decimal(0.00)
-
 
     def get_bucket_or_none(self, account):
         for regexp, target_account in self.mappings:
