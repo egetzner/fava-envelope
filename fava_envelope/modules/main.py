@@ -26,8 +26,10 @@ def main():
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
     i = ge.get_inventories('2020-10', include_real_accounts=False)
-    mr = i.get_matching_rows('SinkingFund:WashingMachine')[0]
-    logging.info(mr)
+    logging.info(i.is_current)
+
+    i = ge.get_inventories('2020-11', include_real_accounts=False)
+    logging.info(i.is_current)
 
     if len(errors) == 0:
         logging.debug('no errors found')

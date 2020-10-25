@@ -92,7 +92,6 @@ class BeancountEnvelope:
 
     def query_account_balances(self, date):
         balance = Decimal(0.0)
-        logging.info(date)
         query_str = f"select account, convert(sum(position),'{self.currency}') from close on {date} group by 1 order by 1;"
         rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
         for row in rows[1]:

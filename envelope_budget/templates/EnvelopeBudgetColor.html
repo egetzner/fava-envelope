@@ -107,27 +107,35 @@ progress[value] {
     height: 2px;
 }
 
-</style>
+.budget-header {
+    font-size: 1.3em;
+}
 
+.is-current {
+    text-decoration: underline;
+}
+
+</style>
+{% set show_accounts = extension.set_show_accounts(request.args.get('show_accounts')) %}
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
 
 <div class="headerline">
-    <h3 class="budget-header"> {{ extension._date_range() }}  </h3>
+    <h3 class="budget-header {{ 'is-current' if data.is_current else '' }}"> {{ extension._date_range() }}  </h3>
     <h3>
-      <a href="{{ url_for_current(period=extension._prev_month()) }}">&lt;&lt;</a> |
-      <a href="{{ url_for_current(period=extension._period_for(today())) }}">Current period</a> |
-      <a href="{{ url_for_current(period=extension._next_month()) }}">&gt;&gt;</a>
+      <a href="{{ url_for_current(period=extension._prev_month(),show_accounts=show_accounts) }}">&lt;&lt;</a> |
+      <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}">Current period</a> |
+      <a href="{{ url_for_current(period=extension._next_month(),show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
 {% if extension.display_real_accounts %}
     <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
 {% else %}
-    <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True          ) }}';">Accounts</button>
+    <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True) }}';">Accounts</button>
 {% endif %}
 </div>
 
 <div class="headerline">
   {% for m in extension.get_budgets_months_available() %}
-  <h3><b>{% if not (module == m) %}<a href="{{ url_for_current(period=m) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
+  <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for_current(period=m,show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
   {% endfor %}
 </div>
 

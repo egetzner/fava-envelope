@@ -205,8 +205,9 @@ class AccountRow:
 
 
 class PeriodData:
-    def __init__(self, period, account_rows, accounts):
+    def __init__(self, period, account_rows, accounts, is_current_month=False):
         self.period = period
+        self.is_current = is_current_month
         self.account_rows = account_rows
         self.accounts = accounts
         self.accounts.sort(key=sort_buckets)
@@ -253,13 +254,13 @@ class EnvelopeWrapper:
                                    budget_accounts=module.budget_accounts,
                                    mappings=module.mappings)
 
-        self.income_tables, envelope_tables, all_activity, current_month = module.envelope_tables(parser)
+        self.income_tables, envelope_tables, all_activity, self.current_month = module.envelope_tables(parser)
 
         bg = BeancountGoal(entries, errors, options, module.currency)
         goals = bg.parse_fava_budget(module.date_start, module.date_end)
         targets, rem_months = bg.parse_budget_goals(module.date_start, module.date_end)
         goals_with_buckets = add_bucket_levels(goals, all_activity.index, module.mappings)
-        self.bucket_data = merge_with_multihierarchy(envelope_tables, all_activity, goals_with_buckets, current_month)
+        self.bucket_data = merge_with_multihierarchy(envelope_tables, all_activity, goals_with_buckets, self.current_month)
         self.targets_with_buckets = merge_with_targets(self.bucket_data, targets, rem_months)
         self.account_data = pd.concat({'activity': all_activity, 'goals': goals_with_buckets}, axis=1).swaplevel(1, 0, axis=1)
 
@@ -300,5 +301,5 @@ class EnvelopeWrapper:
             account_row.set_account_row(index[1], data)
 
         acc_hierarchy = get_hierarchy(self.account_to_buckets, include_real_accounts)
-        return PeriodData(period, rows, acc_hierarchy)
+        return PeriodData(period, rows, acc_hierarchy, period == self.current_month)
 

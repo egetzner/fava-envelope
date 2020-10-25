@@ -57,6 +57,9 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             self.ledger.errors.append(
                 LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))
 
+    def is_current(self, period):
+        return self.envelopes.current_month == period
+
     def get_budgets_months_available(self):
         return self.envelopes.get_budgets_months_available()
 
