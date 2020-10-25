@@ -1,4 +1,3 @@
-
 from fava.core.budgets import parse_budgets, calculate_budget
 
 import pandas as pd
@@ -10,6 +9,7 @@ from beancount.core.data import Custom
 from beancount.parser import options
 
 from envelope_budget.modules.goals import goal
+
 
 def _get_date_range(start, end):
     return pd.date_range(start, end, freq='MS')#.to_pydatetime()
@@ -119,7 +119,8 @@ class BeancountGoal:
 
                 if end is not None:
                     mr = {r: _month_diff(r, item.target_date) for r in dates if item.start_date <= r <= item.target_date}
-                    months_remaining.loc[a, mr.keys()] = mr
+                    if mr:
+                        months_remaining.loc[a, mr.keys()] = mr
 
-        return target_amounts, months_remaining
+        return target_amounts.dropna(axis=0, how='all'), months_remaining
 

@@ -183,7 +183,7 @@ progress[value] {
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
               {{ extension.format_amount(goal, show_if_zero=False) }}
-              {% if account_row.in_budget and not account_row.is_fully_funded %}
+              {% if not account_row.is_non_budget() and not account_row.is_fully_funded %}
                   <progress max="1" value="{{account_row.goal_progress}}">
                         &#x1F785;
                   </progress>

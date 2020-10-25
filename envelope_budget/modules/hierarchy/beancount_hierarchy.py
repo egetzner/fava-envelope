@@ -159,9 +159,9 @@ def map_accounts_to_bucket(mappings, accounts):
     return buckets
 
 
-def get_hierarchy(buckets, buckets_with_accounts, include_children):
+def get_hierarchy(buckets_with_accounts, include_children):
     roots = {}
-    for name in sorted(buckets):
+    for name in sorted(buckets_with_accounts.keys()):
         root_name = name.split(':')[0]
         root = roots.get(root_name, Bucket(root_name, False))
         bucket = get_or_create_with_hierarchy(root, name)
@@ -179,20 +179,31 @@ def get_hierarchy(buckets, buckets_with_accounts, include_children):
     return [list(acc.values())[0] for acc in roots.values()]
 
 
-def from_accounts_to_hierarchy(mappings, hierarchy_df, accounts_df):
-    df = pd.DataFrame(index=hierarchy_df.index)
-    accounts_df.index.name = 'account'
+def get_level_as_dict(multi_level_df, single_level_df: list):
+    with_real_accounts = multi_level_df.groupby(level=0).apply(lambda df: list(df.index.get_level_values(level=1).values)).to_dict()
+
+    for df in single_level_df:
+        for b in df.index:
+            if b not in with_real_accounts:
+                with_real_accounts[b] = []
+
+    return with_real_accounts
+
+
+def add_bucket_levels(single_level_df, hierarchy_index, mappings, lvl_name='account'):
+    df = pd.DataFrame(index=hierarchy_index)
+    single_level_df.index.name = lvl_name
 
     # 1. check which accounts are already mapped:
-    known_accounts = set(hierarchy_df.index.get_level_values(level=1))
-    accounts_to_match = set(accounts_df.index.values)
+    known_accounts = set(hierarchy_index.get_level_values(level=lvl_name))
+    accounts_to_match = set(single_level_df.index.values)
 
-    df = df.join(accounts_df)
+    df = df.join(single_level_df)
     unmatched_accounts = accounts_to_match.difference(known_accounts)
 
     for name in unmatched_accounts:
         bucket = map_to_bucket(mappings, name)
-        row = accounts_df.loc[name]
+        row = single_level_df.loc[name]
         df.loc[(bucket, name), :] = row
 
     return df.fillna(Decimal(0.00))

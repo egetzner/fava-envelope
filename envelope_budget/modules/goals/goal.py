@@ -100,9 +100,12 @@ class BeanBudgetGoal(Target):
         elif max_amount is not None:
             # we need to compute the number of months:
             duration = end - start
-            exact = max_amount / duration
-            decimals = -1 if exact > 15 else 0
-            amount = round(exact, decimals)
+            if duration <= 0:
+                amount = max_amount
+            else:
+                exact = max_amount / duration
+                decimals = -1 if exact > 15 else 0
+                amount = round(exact, decimals)
 
         cum_amount = 0
 

@@ -29,9 +29,6 @@ def main():
     mr = i.get_matching_rows('SinkingFund:WashingMachine')[0]
     logging.info(mr)
 
-    mr = i.get_matching_rows('SinkingFund:WaschingMachine')[0]
-    logging.info(mr)
-
     if len(errors) == 0:
         logging.debug('no errors found')
 

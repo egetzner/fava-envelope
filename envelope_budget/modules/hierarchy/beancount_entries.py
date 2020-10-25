@@ -18,7 +18,7 @@ def _date_to_string(x):
     return f"{x.year}-{str(x.month).zfill(2)}"
 
 
-class BeancountEntries:
+class TransactionParser:
 
     def __init__(self, entries, errors, options_map, currency, budget_accounts, mappings):
         self.entries = entries

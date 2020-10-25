@@ -6,10 +6,10 @@ import pandas as pd
 import datetime
 from collections import defaultdict as ddict
 
-from envelope_budget.modules.hierarchy.beancount_entries import BeancountEntries
+from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import BeancountGoal, merge_with_multihierarchy, merge_with_targets
-from envelope_budget.modules.hierarchy.beancount_hierarchy import Bucket, get_hierarchy, from_accounts_to_hierarchy
+from envelope_budget.modules.hierarchy.beancount_hierarchy import Bucket, get_hierarchy, add_bucket_levels, get_level_as_dict
 
 
 def _add_amount(inventory, value, currency='EUR'):
@@ -57,22 +57,18 @@ class AccountRow:
     def __init__(self):
         self.name: str = "<Unknown>"
         self.row_type = RowType.CONTAINER
-
-        self.is_bucket: bool = False
-        self.is_real: bool = False
+        self.in_budget: bool = True
 
         self.budgeted: Inventory = Inventory()
         self.available: Inventory = Inventory()
         self.spent: Inventory = Inventory()
         self.target: Inventory = Inventory()
 
-        self.in_budget = True
-
         self.target: Target = Target()
         self.target_monthly: Target = Target()
         self.goal_monthly: Target = Target()
 
-        self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available})
+        self._all_values = dict({'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available})
 
     @property
     def is_fully_funded(self):
@@ -83,6 +79,14 @@ class AccountRow:
             return self.goal_monthly.is_funded
 
         return True
+
+    @property
+    def is_real(self):
+        return self.row_type == RowType.ACCOUNT
+
+    @property
+    def is_bucket(self):
+        return self.row_type == RowType.BUCKET
 
     @property
     def goal_progress(self):
@@ -132,13 +136,16 @@ class AccountRow:
     def is_non_budget(self):
         return self.is_real or not self.in_budget
 
-    def set_targets(self, data):
+    def set_targets(self, name, data):
         self.target = Target(data['target_total'], data['progress_total'])
         self.target_monthly = Target(data['target_monthly'], data['progress_monthly'])
 
+        if self.row_type == RowType.CONTAINER:
+            self.row_type = RowType.BUCKET
+            self.name = name
+
     def set_bucket_row(self, name, e_row):
         self.name = name
-        self.is_bucket = True
         self.row_type = RowType.BUCKET
 
         avail = e_row.available
@@ -155,8 +162,6 @@ class AccountRow:
 
     def set_account_row(self, name, row):
         self.name = name
-        self.is_real = True
-        self.in_budget = False
         self.row_type = RowType.ACCOUNT
 
         _add_amount(self.spent, row["activity"])
@@ -188,7 +193,7 @@ class AccountRow:
         return Inventory()
 
     def is_empty(self):
-        return len([i for i in self._all_values.values() if not i.is_empty()]) == 0
+        return len([i for i in self._all_values.values() if not i.is_empty()]) == 0 and not self.has_any_goal
 
     def __str__(self):
         acc = f'{self.name} ({"real" if self.is_real else "bucket" if self.is_bucket else "unknown"})'
@@ -200,20 +205,17 @@ class AccountRow:
 
 
 class PeriodData:
-    def __init__(self, period, bucket_values, account_values, accounts):
+    def __init__(self, period, account_rows, accounts):
         self.period = period
-        self.bucket_values = bucket_values
-        self.account_values = account_values
+        self.account_rows = account_rows
         self.accounts = accounts
         self.accounts.sort(key=sort_buckets)
 
     def account_row(self, a):
-        is_bucket = True
         if isinstance(a, Bucket):
-            is_bucket = not a.is_real
             a = a.account
 
-        return self.bucket_values[a] if is_bucket else self.account_values[a]
+        return self.account_rows[a]
 
     def is_leaf(self, acc):
         ar: AccountRow = self.account_row(acc)
@@ -221,15 +223,13 @@ class PeriodData:
 
     def get_matching_rows(self, acc):
         is_bucket = True
-        values = self.bucket_values
         if isinstance(acc, Bucket):
             a = acc.account
             is_bucket = not acc.is_real
-            values = self.bucket_values if is_bucket else self.account_values
         else:
             a = acc
 
-        matching = [values[ar] for ar in values.keys() if ar.startswith(a)]
+        matching = [self.account_rows[ar] for ar in self.account_rows.keys() if ar.startswith(a)]
         return [m for m in matching if m.is_bucket == is_bucket]
 
     def is_visible(self, a, show_real):
@@ -248,21 +248,22 @@ class EnvelopeWrapper:
         if not self.initialized:
             return
 
-        parser = BeancountEntries(entries, errors, options,
+        parser = TransactionParser(entries, errors, options,
                                    currency=module.currency,
                                    budget_accounts=module.budget_accounts,
                                    mappings=module.mappings)
 
         self.income_tables, envelope_tables, all_activity, current_month = module.envelope_tables(parser)
+
         bg = BeancountGoal(entries, errors, options, module.currency)
         goals = bg.parse_fava_budget(module.date_start, module.date_end)
         targets, rem_months = bg.parse_budget_goals(module.date_start, module.date_end)
-        goals_with_buckets = from_accounts_to_hierarchy(module.mappings, all_activity, goals)
+        goals_with_buckets = add_bucket_levels(goals, all_activity.index, module.mappings)
         self.bucket_data = merge_with_multihierarchy(envelope_tables, all_activity, goals_with_buckets, current_month)
         self.targets_with_buckets = merge_with_targets(self.bucket_data, targets, rem_months)
-        multi_level_index = goals_with_buckets
-        self.mapped_accounts = multi_level_index.groupby(level=0).apply(lambda df: list(df.index.get_level_values(level=1).values)).to_dict()
         self.account_data = pd.concat({'activity': all_activity, 'goals': goals_with_buckets}, axis=1).swaplevel(1, 0, axis=1)
+
+        self.account_to_buckets = get_level_as_dict(self.account_data, [self.bucket_data, self.targets_with_buckets])
 
     def get_budgets_months_available(self):
         return [] if not self.initialized else self.income_tables.columns
@@ -280,28 +281,24 @@ class EnvelopeWrapper:
             month = today.month
             period = f'{year:04}-{month:02}'
 
-        bucket_values = ddict(AccountRow)
-        account_values = ddict(AccountRow)
+        rows = ddict(AccountRow)
 
-        if self.bucket_data is not None and period in self.bucket_data.columns:
-            buckets_by_month = self.bucket_data.xs(key=period, level=0, axis=1, drop_level=True)
-            target_by_month = self.targets_with_buckets.xs(key=period, level=0, axis=1, drop_level=True)
+        buckets_by_month = self.bucket_data.xs(key=period, level=0, axis=1, drop_level=True)
+        target_by_month = self.targets_with_buckets.xs(key=period, level=0, axis=1, drop_level=True)
+        accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
 
-            for index, e_row in buckets_by_month.iterrows():
-                account_row = bucket_values[index]
-                account_row.set_bucket_row(index, e_row)
+        for index, e_row in buckets_by_month.iterrows():
+            account_row = rows[index]
+            account_row.set_bucket_row(index, e_row)
 
-            for index, e_row in target_by_month.iterrows():
-                account_row = bucket_values[index]
-                account_row.set_targets(e_row)
+        for index, e_row in target_by_month.iterrows():
+            account_row = rows[index]
+            account_row.set_targets(index, e_row)
 
-            if self.account_data is not None and period in self.account_data.columns:
-                accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
+        for index, data in accounts_in_month.iterrows():
+            account_row = rows[index[1]]
+            account_row.set_account_row(index[1], data)
 
-                for index, data in accounts_in_month.iterrows():
-                    account_row = account_values[index[1]]
-                    account_row.set_account_row(index[1], data)
-
-        acc_hierarchy = get_hierarchy(self.bucket_data.index, self.mapped_accounts, include_real_accounts)
-        return PeriodData(period, bucket_values, account_values, acc_hierarchy)
+        acc_hierarchy = get_hierarchy(self.account_to_buckets, include_real_accounts)
+        return PeriodData(period, rows, acc_hierarchy)
 
