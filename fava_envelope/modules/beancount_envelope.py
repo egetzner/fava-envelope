@@ -23,7 +23,7 @@ BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, errors, options_map, start_date=None, future_months=1, future_rollover=False, show_real_accounts=True):
+    def __init__(self, entries, errors, options_map, start_date=None, future_months=1, future_rollover=True, show_real_accounts=True):
 
         self.entries = entries
         self.errors = errors

@@ -37,6 +37,12 @@
   border-radius: 25px;
 }
 
+.tree-table .balance.goal {
+    padding: 0.2em 0.1em;
+    font-size: 0.75em;
+    margin: auto;
+}
+
 .tree-table .available.underfunded {
   padding-left: 0.7em;
   padding-right: 0.7em;
@@ -73,7 +79,7 @@
   padding-top: 2px;
   padding-bottom: 2px;
   background-color: #e0e0e0;
-  color: white;
+  color: gray;
   font-weight: bold;
 }
 
@@ -95,9 +101,10 @@
 }
 
 progress[value] {
-    display:block;
-    width: auto;
-    height: 3px;
+    position: absolute;
+    display: block;
+    width: 130px;
+    height: 2px;
 }
 
 </style>
@@ -139,7 +146,7 @@ progress[value] {
     <li class="head">
         <p>
             <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
-            <span class="num">Goals</span>
+            <span class="num">Goal</span>
             <span class="num">Budgeted</span>
             <span class="num">Spent</span>
             <span class="num">Available</span>
@@ -164,11 +171,6 @@ progress[value] {
         {% else %}
             <span class="progress bucket {{ 'budget' if account_row.is_bucket else '' }} ">
               {{ extension._name(account) }}
-              {% if account_row.in_budget and not account_row.is_funded and account_row.has_goal %}
-                  <progress max="1" value="{{account_row.progress}}">
-                        &#x1F785;
-                  </progress>
-              {% endif %}
             </span>
         {% endif %}
 
@@ -181,10 +183,16 @@ progress[value] {
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
               {{ extension.format_amount(goal, show_if_zero=False) }}
+              {% if account_row.in_budget and not account_row.is_fully_funded %}
+                  <progress max="1" value="{{account_row.goal_progress}}">
+                        &#x1F785;
+                  </progress>
+              {% endif %}
           </span>
+            <!--
           <span class="balance-children">
               {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
-          </span>
+          </span>-->
         </span>
 
         {% if account_row.is_non_budget() %}
@@ -225,14 +233,16 @@ progress[value] {
                   </span>
                   <span class="balance">
                       {% if extension._is_leaf(account) %}
-                        <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.has_goal and not account_row.is_funded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
+                        <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.is_underfunded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
 
-                            {% if not extension._is_real_account(account) and account_row.has_goal %}
+                            {% if not extension._is_real_account(account) and account_row.has_any_goal %}
                             {% if available.number >= 0 %}
                               {% if account_row.is_funded %}
                                 &#x2714;
                                 {% else%}
-                                &#x1F785;
+                                    {% if account_row.is_underfunded %}
+                                    &#x1F785;
+                                    {% endif %}
                               {% endif %}
                             {% endif %}
                           {% endif %}

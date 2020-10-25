@@ -9,7 +9,7 @@ from collections import defaultdict as ddict
 
 from fava_envelope.modules.beancount_entries import BeancountEntries
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
-from fava_envelope.modules.beancount_goals import BeancountGoal, compute_targets
+from fava_envelope.modules.beancount_goals import BeancountGoal, merge_with_multihierarchy, merge_with_targets
 from fava_envelope.modules.beancount_hierarchy import Bucket, get_hierarchy, from_accounts_to_hierarchy
 
 
@@ -28,6 +28,32 @@ class RowType(Enum):
     ACCOUNT = 3
 
 
+class Target:
+    def __init__(self, amount: int = 0, progress: int = None):
+        self.amount: Inventory = Inventory()
+        _add_amount(self.amount, amount)
+        self.goal_progress = progress
+        if pd.isna(progress) or progress is None:
+            self.goal_progress = 0 if amount != 0 else None
+
+    def is_empty(self):
+        return self.amount.is_empty()
+
+    def __bool__(self):
+        return not self.is_empty()
+
+    @property
+    def is_funded(self):
+        return self.goal_progress is not None and self.goal_progress >= 1
+
+    def __str__(self):
+        if self:
+            if self.goal_progress is None:
+                return f'{self.amount} (no progress)'
+            return f'{self.amount}: ({self.goal_progress*100:03.2f}% funded)'
+        return 'empty'
+
+
 class AccountRow:
     def __init__(self):
         self.name: str = "<Unknown>"
@@ -36,25 +62,80 @@ class AccountRow:
         self.is_bucket: bool = False
         self.is_real: bool = False
 
-        self.goal: Inventory = Inventory()
         self.budgeted: Inventory = Inventory()
         self.available: Inventory = Inventory()
         self.spent: Inventory = Inventory()
         self.target: Inventory = Inventory()
 
-        self.has_goal = False
-        self.goal_progress = None
-        self.is_funded = None
         self.in_budget = True
 
-        self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available, 'target': self.target})
+        self.target: Target = Target()
+        self.target_monthly: Target = Target()
+        self.goal_monthly: Target = Target()
+
+        self._all_values = dict({'goal': self.goal, 'budgeted': self.budgeted, 'spent': self.spent, 'available': self.available})
 
     @property
-    def progress(self):
-        return self.goal_progress if self.goal_progress > 0 else 0
+    def is_fully_funded(self):
+        if self.target:
+            return self.target.is_funded
+
+        if self.goal_monthly:
+            return self.goal_monthly.is_funded
+
+        return True
+
+    @property
+    def goal_progress(self):
+        if self.target_monthly and not self.target_monthly.is_funded:
+            return self.target_monthly.goal_progress
+
+        if self.target:
+            return self.target.goal_progress
+
+        if self.goal_monthly:
+            return self.goal_monthly.goal_progress
+
+        return None
+
+    @property
+    def is_underfunded(self):
+        if self.target_monthly:
+            return not self.target_monthly.is_funded
+
+        # target without monthly target cannot be underfunded
+        if self.target:
+            return False
+
+        if self.goal_monthly:
+            return not self.goal_monthly.is_funded
+
+        #items without goals cannot be underfunded
+        return False
+
+    @property
+    def is_funded(self):
+        if self.target_monthly:
+            return self.target_monthly.is_funded
+
+        if self.target:
+            return self.target.is_funded
+        
+        if self.goal_monthly:
+            return self.goal_monthly.is_funded
+
+        return None
+
+    @property
+    def has_any_goal(self):
+        return self.target or self.target_monthly or self.goal_monthly
 
     def is_non_budget(self):
         return self.is_real or not self.in_budget
+
+    def set_targets(self, data):
+        self.target = Target(data['target_total'], data['progress_total'])
+        self.target_monthly = Target(data['target_monthly'], data['progress_monthly'])
 
     def set_bucket_row(self, name, e_row):
         self.name = name
@@ -64,7 +145,6 @@ class AccountRow:
         avail = e_row.available
         budget = e_row.budgeted
         activity = e_row.activity
-        goal = e_row.goals
 
         if pd.isna(avail) and pd.isna(budget):
             self.in_budget = False
@@ -72,11 +152,7 @@ class AccountRow:
         _add_amount(self.available, avail)
         _add_amount(self.budgeted, budget)
         _add_amount(self.spent, activity)
-        _add_amount(self.goal, goal)
-
-        self.goal_progress = e_row['goal_progress']
-        self.is_funded = e_row['goal_funded']
-        self.has_goal = not pd.isna(goal) and goal != 0
+        self.goal_monthly = Target(e_row.goals, e_row['goal_progress'])
 
     def set_account_row(self, name, row):
         self.name = name
@@ -85,7 +161,17 @@ class AccountRow:
         self.row_type = RowType.ACCOUNT
 
         _add_amount(self.spent, row["activity"])
-        _add_amount(self.goal, row["goals"])
+        self.goal_monthly = Target(row["goals"])
+
+    @property
+    def goal(self):
+        if self.target_monthly:
+            return self.target_monthly.amount
+
+        if self.target:
+            return self.target.amount
+
+        return self.goal_monthly.amount
 
     def get(self, name):
         if isinstance(name, str):
@@ -110,7 +196,8 @@ class AccountRow:
         if self.is_empty():
             return f'[{acc}] is empty'
         else:
-            return f'[{acc}] Goal: {self.goal}, Budgeted: {self.budgeted}, Spent: {self.spent} = Available: {self.available}'
+            return f'[{acc}] Budgeted: {self.budgeted}, Spent: {self.spent} = Available: {self.available}' \
+                   f'\n Goals and Targets: {self.target} (monthly: {self.target_monthly}) - goal: {self.goal_monthly}'
 
 
 class PeriodData:
@@ -170,8 +257,10 @@ class EnvelopeWrapper:
         self.income_tables, envelope_tables, all_activity, current_month = module.envelope_tables(parser)
         bg = BeancountGoal(entries, errors, options, module.currency)
         goals = bg.parse_fava_budget(module.date_start, module.date_end)
+        targets, rem_months = bg.parse_budget_goals(module.date_start, module.date_end)
         goals_with_buckets = from_accounts_to_hierarchy(module.mappings, all_activity, goals)
-        self.bucket_data = compute_targets(envelope_tables, all_activity, goals_with_buckets, current_month)
+        self.bucket_data = merge_with_multihierarchy(envelope_tables, all_activity, goals_with_buckets, current_month)
+        self.targets_with_buckets = merge_with_targets(self.bucket_data, targets, rem_months)
         multi_level_index = goals_with_buckets
         self.mapped_accounts = multi_level_index.groupby(level=0).apply(lambda df: list(df.index.get_level_values(level=1).values)).to_dict()
         self.account_data = pd.concat({'activity': all_activity, 'goals': goals_with_buckets}, axis=1).swaplevel(1, 0, axis=1)
@@ -197,10 +286,15 @@ class EnvelopeWrapper:
 
         if self.bucket_data is not None and period in self.bucket_data.columns:
             buckets_by_month = self.bucket_data.xs(key=period, level=0, axis=1, drop_level=True)
+            target_by_month = self.targets_with_buckets.xs(key=period, level=0, axis=1, drop_level=True)
 
             for index, e_row in buckets_by_month.iterrows():
                 account_row = bucket_values[index]
                 account_row.set_bucket_row(index, e_row)
+
+            for index, e_row in target_by_month.iterrows():
+                account_row = bucket_values[index]
+                account_row.set_targets(e_row)
 
             if self.account_data is not None and period in self.account_data.columns:
                 accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
