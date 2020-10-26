@@ -9,6 +9,7 @@ from beancount.core.data import Custom
 from beancount.parser import options
 
 from envelope_budget.modules.goals import goal
+from envelope_budget.modules.hierarchy.beancount_hierarchy import add_bucket_levels
 
 
 def _get_date_range(start, end):
@@ -26,55 +27,29 @@ def _month_diff(start_date, end_date):
         return (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
 
 
-def merge_with_targets(buckets, targets, remaining_months):
-    available = buckets.xs(key='available', level=1, axis=1).filter(targets.index, axis=0)
-    budgeted = buckets.xs(key='budgeted', level=1, axis=1).filter(targets.index, axis=0)
-    targets.columns = available.columns  # get rid of the pandas time range for now
-    total_progress = available.div(targets)
+def compute_monthly_targets(envelopes, targets, remaining_months):
+    available = envelopes.xs(key='available', level=1, axis=1).filter(targets.index, axis=0)
+    targets.columns = available.columns
     remaining_months.columns = available.columns
     div_months = remaining_months.add(1)
 
     shifted = targets.add(available.shift(periods=1, axis='columns').mul(-1))
     target_monthly = shifted[shifted > 0].div(div_months[div_months > 0])
-    monthly_progress = budgeted.div(target_monthly[target_monthly > 0])
 
-    total_merged = pd.concat({'target_total': targets,
-                              'target_monthly': target_monthly,
-                              'progress_total': total_progress,
-                              'progress_monthly': monthly_progress
-                              }, axis=1).swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1)
-
-    return total_merged
+    return target_monthly
 
 
-def merge_with_multihierarchy(tables, all_activity, goals_with_buckets, current_month):
-    goals = goals_with_buckets.sum(axis=0, level=0)
-    spent = all_activity.sum(axis=0, level=0)  # tables.xs(key='activity', level=1, axis=1)
-    budgeted = tables.xs(key='budgeted', level=1, axis=1)
-    available = tables.xs(key='available', level=1, axis=1)
-    avail_som = available.add(spent.mul(-1), fill_value=0)
+def merge_all_targets(data):
+    return pd.concat(data, axis=1).swaplevel(0, 1, axis=1).sort_index(axis=0).sort_index(axis=1).reindex(axis=1)
 
-    funded = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
-                        budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
-    funded = funded.fillna(Decimal(0.00))
+def merge_dfs(dataframes):
+    return pd.concat(dataframes, axis=1).swaplevel(0, 1, axis=1).reindex(axis=1)
 
-    to_be_funded = goals.add(funded.mul(-1)).dropna()
-    tbf = funded[funded != 0].div(goals[goals != 0])
-    tbf[to_be_funded == 0] = 1
-    progress = tbf.astype('float').round(decimals=2)
-    is_funded = progress >= 1
+def compute_progress(target, ref_amount):
+    target_df = merge_dfs({'amount': target, 'ref_amount': ref_amount.filter(target.index, axis=0)})
+    return target_df
 
-    merged = pd.concat({'budgeted': budgeted,
-                        'activity': spent,
-                        'available': available,
-                        'goals': goals,
-                        'goal_funded': is_funded,
-                        'goal_progress': progress}, axis=1)
-    df = merged.swaplevel(0, 1, axis=1).sort_index(axis=1).reindex(axis=1)
-    return df
-
-
-class BeancountGoal:
+class EnvelopesWithGoals:
     def __init__(self, entries, errors, options_map, currency):
 
         self.entries = entries
@@ -86,6 +61,38 @@ class BeancountGoal:
 
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
+
+    def get_spending_goals(self, date_start, date_end, mappings, multi_level_index, envelopes, current_month):
+        goals_for_accounts = self.parse_fava_budget(date_start, date_end)
+        full_hierarchy = add_bucket_levels(goals_for_accounts, multi_level_index, mappings)
+
+        spent = envelopes.xs(key='activity', level=1, axis=1)
+        budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
+        available = envelopes.xs(key='available', level=1, axis=1)
+        avail_som = available.add(spent.mul(-1), fill_value=0)
+
+        ref_amount = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
+                            budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
+
+        spending_goals = compute_progress(full_hierarchy.sum(level=0, axis=0), ref_amount)
+        spending_goals.name = 'spend'
+        return full_hierarchy, spending_goals
+
+    def get_targets(self, date_start, date_end, envelopes):
+
+        targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end)
+        targets_by_month = compute_monthly_targets(envelopes, targets, rem_months)
+        targets_by_month = targets_by_month.add(targets_monthly, fill_value=0)
+
+        t = compute_progress(targets, envelopes.xs(key='available', level=1, axis=1))
+        t.name = 'target'
+
+        budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
+        spent = envelopes.xs(key='activity', level=1, axis=1)
+
+        tm = compute_progress(targets_by_month, budgeted.add(spent))
+        tm.name = 'target_m'
+        return t, tm
 
     def parse_fava_budget(self, start_date, end_date):
         custom = [e for e in self.entries if isinstance(e, Custom)]
@@ -107,20 +114,28 @@ class BeancountGoal:
     def parse_budget_goals(self, start_date, end_date):
         dates = _get_date_range(start_date, end_date)
         goals = goal.parse_goals(self.entries)
+
         target_amounts = pd.DataFrame(columns=dates)
+        monthly_targets = pd.DataFrame(columns=dates)
         months_remaining = pd.DataFrame(columns=dates)
 
         for a in goals.keys():
             for item in goals[a]:
-                amount = item.target_amount
-                start = _date_to_string(item.start_date)
-                end = _date_to_string(item.target_date) if item.target_date is not None else None
-                target_amounts.loc[a, start:end] = amount
+                if item.target:
+                    amount = item.target.number
+                    start = _date_to_string(item.start_date)
+                    end = _date_to_string(item.target_date) if item.target_date is not None else None
+                    target_amounts.loc[a, start:end] = amount
 
-                if end is not None:
-                    mr = {r: _month_diff(r, item.target_date) for r in dates if item.start_date <= r <= item.target_date}
-                    if mr:
-                        months_remaining.loc[a, mr.keys()] = mr
+                    if end is not None:
+                        mr = {r: _month_diff(r, item.target_date) for r in dates if item.start_date <= r <= item.target_date}
+                        if mr:
+                            months_remaining.loc[a, mr.keys()] = mr
+                elif item.monthly_target:
+                    amount = item.monthly_target.number
+                    start = _date_to_string(item.start_date)
+                    end = _date_to_string(item.target_date) if item.target_date is not None else None
+                    monthly_targets.loc[a, start:end] = amount
 
-        return target_amounts.dropna(axis=0, how='all'), months_remaining
+        return target_amounts.dropna(axis=0, how='all'), months_remaining, monthly_targets
 

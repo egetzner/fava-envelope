@@ -183,7 +183,7 @@ progress[value] {
         {% endif %}
 
         </span>
-        {% set goal = extension._value(account_row.goal) %}
+        {% set goal = extension._value(account_row.display_goal.amount) %}
         {% set budgeted = extension._value(account_row.budgeted) %}
         {% set spent = extension._value(account_row.spent) %}
         {% set available = extension._value(account_row.available) %}
@@ -191,6 +191,7 @@ progress[value] {
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
               {{ extension.format_amount(goal, show_if_zero=False) }}
+              {{ account_row.goal_type if account_row.display_goal else '' }}
               {% if not account_row.is_non_budget() and not account_row.is_fully_funded %}
                   <progress max="1" value="{{account_row.goal_progress}}">
                         &#x1F785;

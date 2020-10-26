@@ -11,7 +11,7 @@ from beancount.core.number import Decimal
 from beancount.core import data
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
-from envelope_budget.modules.envelope_extension import EnvelopeWrapper
+from envelope_budget.modules.envelope_extension import EnvelopeWrapper, Target
 
 import collections
 import traceback
@@ -190,7 +190,10 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         sum = Inventory()
         all_matching = self.current_period.get_matching_rows(a)
         for sub in all_matching:
-            sum.add_inventory(sub.get(rows))
+            item = sub.get(rows)
+            if isinstance(item, Target):
+                item = item.amount
+            sum.add_inventory(item)
         return self._only_position(sum.reduce(convert.get_weight))
 
     def _is_leaf(self, a):
