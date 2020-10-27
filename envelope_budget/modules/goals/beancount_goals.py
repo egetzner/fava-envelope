@@ -90,7 +90,7 @@ class EnvelopesWithGoals:
         budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
         spent = envelopes.xs(key='activity', level=1, axis=1)
 
-        tm = compute_progress(targets_by_month, budgeted.add(spent))
+        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=Decimal(0.00)))
         tm.name = 'target_m'
         return t, tm
 

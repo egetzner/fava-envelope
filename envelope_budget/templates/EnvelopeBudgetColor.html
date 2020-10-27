@@ -198,10 +198,11 @@ progress[value] {
                   </progress>
               {% endif %}
           </span>
-            <!--
-          <span class="balance-children">
-              {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
-          </span>-->
+            {% if account_row.is_non_budget() %}
+              <span class="balance-children">
+                  {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
+              </span>
+            {% endif %}
         </span>
 
         {% if account_row.is_non_budget() %}

@@ -26,7 +26,7 @@ def main():
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
     i = ge.get_inventories('2020-10', include_real_accounts=False)
-    logging.info(i.account_row('Savings:Retirement'))
+    logging.info(i.account_row('SinkingFund:Moving'))
 
     if len(errors) == 0:
         logging.debug('no errors found')

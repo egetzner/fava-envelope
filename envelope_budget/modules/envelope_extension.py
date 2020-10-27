@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 
 from beancount.core.inventory import Inventory, Amount
@@ -270,15 +271,22 @@ class EnvelopeWrapper:
 
         self.income_tables, envelope_tables, all_activity, self.current_month = module.envelope_tables(parser)
 
+        from_accounts = all_activity.sum(axis=0, level=0)
+        # from_buckets = envelope_tables.xs(key='activity', level=1, axis=1)
+        # logging.info(from_buckets.eq(from_accounts).all(axis=1))
+
+        budgeted = envelope_tables.xs(key='budgeted', level=1, axis=1)
+        available = envelope_tables.xs(key='available', level=1, axis=1)
+
+        self.bucket_data = pd.concat({'activity': from_accounts, 'budgeted': budgeted, 'available': available}, axis=1).swaplevel(1, 0, axis=1)
+
         bg = EnvelopesWithGoals(entries, errors, options, module.currency)
         detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings,
-                                                       all_activity.index, envelope_tables, self.current_month)
-        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, envelope_tables)
+                                                       all_activity.index, self.bucket_data, self.current_month)
+        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, self.bucket_data)
         self.all_targets = merge_all_targets({'sg': spending, 't': targets, 'tm': monthly_target})
 
         self.account_data = pd.concat({'activity': all_activity, 'goals': detail_goals}, axis=1).swaplevel(1, 0, axis=1)
-        self.bucket_data = envelope_tables
-
         self.account_to_buckets = get_level_as_dict(self.account_data, [self.bucket_data, self.all_targets])
 
     def get_budgets_months_available(self):
