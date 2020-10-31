@@ -43,6 +43,36 @@
     margin: auto;
 }
 
+.to-be-budgeted {
+  padding-left: 0.7em;
+  padding-right: 0.7em;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  background-color: var(--color-budget-positive);
+  color: white;
+}
+
+.large-number {
+  font-size: 2em;
+  align: center;
+}
+
+.small-description {
+  font-size: 0.8em;
+  font-weight: normal;
+  text-align: center;
+}
+
+.to-be-budgeted.zero {
+  background-color: var(--color-budget-positive);
+}
+.to-be-budgeted.positive {
+  background-color: #ff9d00;
+}
+.to-be-budgeted.negative {
+  background-color: var(--color-budget-negative);
+}
+
 .tree-table .available.underfunded {
   padding-left: 0.7em;
   padding-right: 0.7em;
@@ -109,6 +139,7 @@ progress[value] {
 
 .budget-header {
     font-size: 1.3em;
+    margin: 5px;
 }
 
 .is-current {
@@ -118,37 +149,43 @@ progress[value] {
 </style>
 {% set show_accounts = extension.set_show_accounts(request.args.get('show_accounts')) %}
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
+{% set summary = extension.get_summary(period) %}
+{% set income_table = extension.generate_income_query_tables(period) %}
 
 <div class="headerline">
-    <h3 class="budget-header {{ 'is-current' if data.is_current else '' }}"> {{ extension._date_range() }}  </h3>
     <h3>
       <a href="{{ url_for_current(period=extension._prev_month(),show_accounts=show_accounts) }}">&lt;&lt;</a> |
-      <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}">Current period</a> |
+        <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}}</span>
+      <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}"> (Current period) </a> |
       <a href="{{ url_for_current(period=extension._next_month(),show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
-{% if extension.display_real_accounts %}
-    <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
-{% else %}
-    <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True) }}';">Accounts</button>
-{% endif %}
+
+    <span class="to-be-budgeted {{ 'zero' if summary.to_be_budgeted == 0 else 'negative' if summary.to_be_budgeted < 0 else 'positive' }}">
+        <div class="large-number" align="center">
+            &euro; {{ extension.format_currency(summary.to_be_budgeted, currency='EUR', show_if_zero=True) }}
+        </div>
+        <div class="small-description">to be budgeted</div>
+    </span>
+
+    {{ querytable.querytable(None, income_table[0], income_table[1]) }}
 </div>
+
 
 <div class="headerline">
   {% for m in extension.get_budgets_months_available() %}
   <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for_current(period=m,show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
   {% endfor %}
+    {% if extension.display_real_accounts %}
+        <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
+    {% else %}
+        <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True) }}';">Accounts</button>
+    {% endif %}
 </div>
 
 {% set grows = "goals" %}
 {% set brows = "budgeted" %}
 {% set srows = "spent" %}
 {% set vrows = "available" %}
-
-<!--
--->
-
-{% set income_table = extension.generate_income_query_tables(period) %}
-{{ querytable.querytable(None, income_table[0], income_table[1]) }}
 
 <ol is="tree-table" class="flex-table tree-table">
     <li class="head">

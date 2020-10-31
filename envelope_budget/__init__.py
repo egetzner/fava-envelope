@@ -1,5 +1,7 @@
 """
 """
+import logging
+
 from beancount.core.number import ZERO
 from beancount.core.inventory import Inventory, Amount
 from beancount.core import convert
@@ -72,39 +74,14 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             self.display_real_accounts = show == "True"
         return self.display_real_accounts
 
+    def get_summary(self, month):
+        logging.debug(f'get_summary {month}')
+        return self.envelopes.get_summary(month) if self.envelopes.initialized else None
+
     def generate_income_query_tables(self, month):
-
-        income_table_types = []
-        income_table_types.append(("Name", str(str)))
-        income_table_types.append(("Amount", str(Decimal)))
-
-        income_table_rows = []
-
-        if month is not None and self.envelopes.initialized:
-            tables = self.envelopes.income_tables
-            row = {}
-            income_table_rows.append({
-                "Name": "Funds for month",
-                "Amount": tables[month]["Avail Income"]
-            })
-            income_table_rows.append({
-                "Name": "Overspent in prev month",
-                "Amount": tables[month]["Overspent"]
-            })
-            income_table_rows.append({
-                "Name": "Budgeted for month",
-                "Amount": tables[month]["Budgeted"]
-            })
-            income_table_rows.append({
-                "Name": "To be budgeted for month",
-                "Amount": tables[month]["To Be Budgeted"]
-            })
-            income_table_rows.append({
-                "Name": "Budgeted in the future",
-                "Amount": tables[month]["Budgeted Future"]
-            })
-
-        return (income_table_types, income_table_rows)
+        types = [('Amount', str(Decimal)), ('Name', str(str))]
+        st = self.get_summary(month)
+        return types, [{'Name': x[0], 'Amount': x[1]} for x in st.get_table().iteritems()] if st is not None else []
 
     # ----
 
@@ -211,6 +188,10 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
     def _period_for(self, date):
         return date.strftime('%Y-%m')
+
+    def month_name(self, period, fmt='%b %Y'):
+        m = datetime.datetime.strptime(period, '%Y-%m')
+        return m.strftime(fmt)
 
     def _prev_month(self):
         return self._period_for(self.period_start - datetime.timedelta(days=1))

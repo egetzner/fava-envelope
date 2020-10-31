@@ -94,12 +94,15 @@ class BeancountEnvelope:
         balance = Decimal(0.0)
         query_str = f"select account, convert(sum(position),'{self.currency}') from close on {date} group by 1 order by 1;"
         rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
+
+        positions = dict()
         for row in rows[1]:
             if any(regexp.match(row[0]) for regexp in self.budget_accounts):
                 if row[1] is not None:
                     balance += row[1]
+                    positions[row[0]] = row[1]
 
-        return balance
+        return balance, pd.DataFrame(data=positions, index=[date]).transpose()
 
     def envelope_tables(self, entry_parser=None):
 
@@ -138,9 +141,13 @@ class BeancountEnvelope:
 
         self._calc_budget_budgeted()
 
+        income_df_detail = pd.DataFrame(data=self.income_df)
+        income_df_detail = income_df_detail.rename(index={'Avail Income': "Income"})
+
         # Calculate Starting Balance Income
-        starting_balance = self.query_account_balances(f'{months[0]}-01')
+        starting_balance, _ = self.query_account_balances(f'{months[0]}-01')
         self.income_df[months[0]]["Avail Income"] += starting_balance
+        income_df_detail.loc["Rollover Funds", months[0]] = starting_balance
 
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
 
@@ -181,6 +188,8 @@ class BeancountEnvelope:
                 continue
             else:
                 prev_month = months[index-1]
+                income_df_detail.loc['Rollover Funds', month] = Decimal(income_df_detail[prev_month].sum(axis=0))
+
                 self.income_df.loc["Avail Income", month] = \
                     self.income_df.loc["Avail Income",month] + \
                     self.income_df.loc["Avail Income", prev_month] + \
@@ -190,11 +199,12 @@ class BeancountEnvelope:
         # Set Budgeted in the future
         for index, month in enumerate(months):
             sum_total = self.income_df[month].sum()
-            if (index == len(months)-1) or sum_total < 0 :
+            if (index == len(months)-1) or sum_total < 0:
                 self.income_df.loc["Budgeted Future", month] = Decimal(0.00)
             else:
                 next_month = months[index+1]
                 opp_budgeted_next_month = self.income_df.loc["Budgeted",next_month] * -1
+                income_df_detail.loc['Stealing from Future', month] = opp_budgeted_next_month > sum_total
                 if opp_budgeted_next_month < sum_total:
                     self.income_df.loc["Budgeted Future", month] = Decimal(-1*opp_budgeted_next_month)
                 else:
@@ -204,7 +214,8 @@ class BeancountEnvelope:
         for index, month in enumerate(months):
             self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
 
-        return self.income_df, self.envelope_df, self.actual_expenses, self.current_month
+        summary_info = pd.concat([self.income_df, income_df_detail], axis=0)
+        return summary_info, self.envelope_df, self.actual_expenses, self.current_month
 
     def is_income(self, account):
         account_type = account_types.get_account_type(account)

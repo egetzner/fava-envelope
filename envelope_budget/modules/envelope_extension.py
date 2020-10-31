@@ -219,6 +219,33 @@ class AccountRow:
                    f'\n Goals and Targets: {self.target} (monthly: {self.target_monthly}) - goal: {self.goal_monthly}'
 
 
+class PeriodSummary:
+    def __init__(self, period, data):
+        self.period = period
+        self.data = data
+
+    @property
+    def to_be_budgeted(self):
+        value = self.data['To Be Budgeted']
+        return value
+
+    def get_table(self):
+        display_names = {'Avail Income': 'Funds for month',
+                          'Overspent': 'Overspent in prev month',
+                          'Budgeted': 'Budgeted for month',
+                          'Budgeted Future': 'Budgeted in next month',
+                          #'To Be Budgeted': 'To be budgeted (for month)'
+                         }
+
+        if self.data is not None:
+            filtered = self.data.filter(items=display_names.keys())
+            return filtered.rename(display_names)
+
+        return None
+
+    def __str__(self):
+        return self.data.to_string()
+
 class PeriodData:
     def __init__(self, period, account_rows, accounts, is_current_month=False):
         self.period = period
@@ -291,6 +318,12 @@ class EnvelopeWrapper:
 
     def get_budgets_months_available(self):
         return [] if not self.initialized else self.income_tables.columns
+
+    def get_summary(self, period: str):
+        if not self.initialized:
+            return PeriodSummary(period, None)
+
+        return PeriodSummary(period, self.income_tables[period])
 
     def get_inventories(self, period: str, include_real_accounts):
 
