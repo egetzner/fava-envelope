@@ -86,7 +86,8 @@ class BeancountEnvelope:
             max_date = max(allocation_dates)
 
         if len(budget_accounts) == 0:
-            self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
+            logging.warning('no budget accounts setup within given time range.')
+            #self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
         return budget_accounts, mappings, max_date
 

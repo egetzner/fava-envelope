@@ -30,6 +30,7 @@ def main():
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
     logging.info(ge.income_tables)
+    logging.info(ge.get_inventories('2021-02', False))
 
     if len(errors) == 0:
         logging.info('no errors found')

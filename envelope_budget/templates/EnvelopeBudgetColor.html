@@ -198,8 +198,6 @@ progress[value] {
 </style>
 {% set show_accounts = extension.set_show_accounts(request.args.get('show_accounts')) %}
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
-{% set summary = extension.get_summary(period) %}
-{% set income_table = extension.generate_income_query_tables(period) %}
 
 <div class="headerline">
     <div>
@@ -222,172 +220,185 @@ progress[value] {
     </div>
 </div>
 
-<div class="headerline">
-    <div class="to-be-budgeted {{ 'zero' if summary.to_be_budgeted == 0 else 'negative' if summary.to_be_budgeted < 0 else 'positive' }}">
-        <div class="large-number">
-            {{ extension.format_currency(summary.to_be_budgeted, currency='EUR', show_if_zero=True) }}
+{% if data.has_content %}
+
+    {% set summary = extension.get_summary(period) %}
+    {% set income_table = extension.generate_income_query_tables(period) %}
+
+    <div class="headerline">
+        <div class="to-be-budgeted {{ 'zero' if summary.to_be_budgeted == 0 else 'negative' if summary.to_be_budgeted < 0 else 'positive' }}">
+            <div class="large-number">
+                {{ extension.format_currency(summary.to_be_budgeted, currency='EUR', show_if_zero=True) }}
+            </div>
+            <div class="small-description">to be budgeted</div>
         </div>
-        <div class="small-description">to be budgeted</div>
+
+        <div>
+            <table id="summary" class="other">
+            <tbody>
+                <tr>
+                    <td class="summary-num">{{ extension.format_signed(summary.available_funds) }}</td>
+                    <td >Funds for {{ summary.month }} (Income: {{ extension.format_signed(summary.income) }})</td>
+                </tr>
+                <tr>
+                    <td class="summary-num">{{ extension.format_signed(summary.overspent_prev, show_if_zero=True) }}</td>
+                    <td >Overspent in {{ summary.prev }} </td>
+                </tr>
+                <tr>
+                    <td class="summary-num">{{ extension.format_signed(summary.budgeted, show_if_zero=True) }}</td>
+                    <td >Budgeted in {{ summary.month }} </td>
+                </tr>
+                <tr class="{{ 'stealing' if summary.is_stealing else '' }}">
+                    <td class="summary-num">{{ extension.format_signed(summary.budgeted_next, show_if_zero=True) }}</td>
+                    <td >Budgeted in Future
+                        {% if summary.is_stealing %}
+                        ({{ extension.format_signed(summary.stealing) }} in {{ summary.next }})
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
     </div>
 
-    <div>
-        <table id="summary" class="other">
-        <tbody>
-            <tr>
-                <td class="summary-num">{{ extension.format_signed(summary.available_funds) }}</td>
-                <td >Funds for {{ summary.month }} (Income: {{ extension.format_signed(summary.income) }})</td>
-            </tr>
-            <tr>
-                <td class="summary-num">{{ extension.format_signed(summary.overspent_prev, show_if_zero=True) }}</td>
-                <td >Overspent in {{ summary.prev }} </td>
-            </tr>
-            <tr>
-                <td class="summary-num">{{ extension.format_signed(summary.budgeted, show_if_zero=True) }}</td>
-                <td >Budgeted in {{ summary.month }} </td>
-            </tr>
-            <tr class="{{ 'stealing' if summary.is_stealing else '' }}">
-                <td class="summary-num">{{ extension.format_signed(summary.budgeted_next, show_if_zero=True) }}</td>
-                <td >Budgeted in Future
-                    {% if summary.is_stealing %}
-                    ({{ extension.format_signed(summary.stealing) }} in {{ summary.next }})
-                    {% endif %}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="headerline">
+      {% for m in extension.get_budgets_months_available() %}
+      <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for_current(period=m,show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
+      {% endfor %}
     </div>
-</div>
 
-<div class="headerline">
-  {% for m in extension.get_budgets_months_available() %}
-  <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for_current(period=m,show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
-  {% endfor %}
-</div>
+    {% set grows = "goals" %}
+    {% set brows = "budgeted" %}
+    {% set srows = "spent" %}
+    {% set vrows = "available" %}
 
-{% set grows = "goals" %}
-{% set brows = "budgeted" %}
-{% set srows = "spent" %}
-{% set vrows = "available" %}
-
-<ol is="tree-table" class="flex-table tree-table">
-    <li class="head">
-        <p>
-            <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
-            <span class="num">Goal</span>
-            <span class="num">Budgeted</span>
-            <span class="num">Spent</span>
-            <span class="num">Available</span>
-        </p>
-    </li>
-{% set ns = namespace(rown=1) %}
-{% for account in data.accounts if extension._is_visible(account) recursive %}
-{% set ns.rown = 1 if extension._has_children(account) else 1 - ns.rown %}
-<li{{ ' class=toggled' if account.account|collapse_account else '' }}>
-  <p class="row-{{ns.rown}}
-     {{- ' group-row' if extension._has_children(account) else '' -}}"
-     {%- if loop.depth0 == 0 %} style="margin-top: 10px;"{% endif %}>
-    <span class="account-cell depth-{{ loop.depth0 }} droptarget
-    {{- '' if not extension._has_children(account) else ' has-children'}}
-    " data-account-name="{{ account.account }}">
-        {% set account_row = extension.account_row(account) %}
-        {% if extension._is_real_account(account) %}
-            {% if extension._has_children(account) %}<span class="expander"></span>{% endif %}
-            <a href="{{ url_for('account', name=account.account, time=period) }}" class="account">
-              {{ extension._name(account) }}
-            </a>
-        {% else %}
-            <span class="progress bucket {{ 'budget' if account_row.is_bucket else '' }} ">
-              {{ extension._name(account) }}
-            </span>
-        {% endif %}
-
-        </span>
-        {% set goal = extension._value(account_row.display_goal.amount) %}
-        {% set budgeted = extension._value(account_row.budgeted) %}
-        {% set spent = extension._value(account_row.spent) %}
-        {% set available = extension._value(account_row.available) %}
-
-        <span class="num {{ 'has-balance' if goal else '' }}">
-          <span class="balance goal">
-              <span class="{{ 'overfunded' if account_row.is_overfunded else '' }}">
-                {{ extension.format_amount(goal, show_if_zero=False) }}
-              </span>
-              {{ account_row.goal_type if account_row.display_goal else '' }}
-              {% if not account_row.is_non_budget() and not account_row.is_fully_funded %}
-                  <progress max="1" value="{{account_row.goal_progress}}">
-                        &#x1F785;
-                  </progress>
-              {% endif %}
-          </span>
-            {% if account_row.is_non_budget() %}
-              <span class="balance-children">
-                  {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
-              </span>
+    <ol is="tree-table" class="flex-table tree-table">
+        <li class="head">
+            <p>
+                <span class="account-cell"><button type="button" class="link expand-all hidden" title="{{ _('Expand all accounts') }}">{{ _('Expand all') }}</button></span>
+                <span class="num">Goal</span>
+                <span class="num">Budgeted</span>
+                <span class="num">Spent</span>
+                <span class="num">Available</span>
+            </p>
+        </li>
+    {% set ns = namespace(rown=1) %}
+    {% for account in data.accounts if extension._is_visible(account) recursive %}
+    {% set ns.rown = 1 if extension._has_children(account) else 1 - ns.rown %}
+    <li{{ ' class=toggled' if account.account|collapse_account else '' }}>
+      <p class="row-{{ns.rown}}
+         {{- ' group-row' if extension._has_children(account) else '' -}}"
+         {%- if loop.depth0 == 0 %} style="margin-top: 10px;"{% endif %}>
+        <span class="account-cell depth-{{ loop.depth0 }} droptarget
+        {{- '' if not extension._has_children(account) else ' has-children'}}
+        " data-account-name="{{ account.account }}">
+            {% set account_row = extension.account_row(account) %}
+            {% if extension._is_real_account(account) %}
+                {% if extension._has_children(account) %}<span class="expander"></span>{% endif %}
+                <a href="{{ url_for('account', name=account.account, time=period) }}" class="account">
+                  {{ extension._name(account) }}
+                </a>
+            {% else %}
+                <span class="progress bucket {{ 'budget' if account_row.is_bucket else '' }} ">
+                  {{ extension._name(account) }}
+                </span>
             {% endif %}
-        </span>
 
-        {% if account_row.is_non_budget() %}
-        <span class="num"></span>
-        {% else %}
-        <span class="num {{ 'has-balance' if budgeted else '' }}">
-          <span class="balance {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-            <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
-              {{ extension.format_amount(budgeted) }}
-            </a>
-          </span>
-          <span class="balance-children {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-            <a href="{{ url_for('account', name=account.account, time=period) }}">
-              {{ extension.format_amount(extension._row_children(brows, account), show_if_zero=True) }}
-            </a>
-          </span>
-        </span>
-        {% endif %}
-
-
-        <span class="num {{ 'has-balance' if spent else '' }}">
-          <span class="balance spent {{ 'negative' if spent.number < 0 else 'positive' if spent.number > 0 else '' }}">
-            <a href="{{ url_for('account', name=account.account, time=period) }}">
-              {{ extension.format_amount(spent, show_if_zero=False) }}
-            </a>
-          </span>
-          <span class="balance-children ">
-            <a href="{{ url_for('account', name=account.account, time=period) }}">
-              {{ extension.format_amount(extension._row_children(srows, account), show_if_zero=False) }}
-            </a>
-          </span>
-        </span>
-
-        {% if not account_row.is_non_budget() %}
-                <span class="num {{ 'has-balance' if available else '' }}">
-                  <span class="balance-children">
-                      {{ extension.format_amount(extension._row_children(vrows, account), show_if_zero=False) }}
-                  </span>
-                  <span class="balance">
-                      {% if extension._is_leaf(account) %}
-                        <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.is_underfunded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
-
-                            {% if not extension._is_real_account(account) and account_row.has_any_goal %}
-                            {% if available.number >= 0 %}
-                              {% if account_row.is_funded %}
-                                &#x2714;
-                                {% else%}
-                                    {% if account_row.is_underfunded %}
-                                    &#x1F785;
-                                    {% endif %}
-                              {% endif %}
-                            {% endif %}
-                          {% endif %}
-                          {{ extension.format_amount(available, show_if_zero=True) }}
-                        </span>
-                      {% endif %}
-                  </span>
             </span>
-       {% endif %}
-  </p>
-<ol>
-{{ loop(extension._sort_subtree(account)) }}
-</ol>
-</li>
-{% endfor %}
-</ol>
+            {% set goal = extension._value(account_row.display_goal.amount) %}
+            {% set budgeted = extension._value(account_row.budgeted) %}
+            {% set spent = extension._value(account_row.spent) %}
+            {% set available = extension._value(account_row.available) %}
+
+            <span class="num {{ 'has-balance' if goal else '' }}">
+              <span class="balance goal">
+                  <span class="{{ 'overfunded' if account_row.is_overfunded else '' }}">
+                    {{ extension.format_amount(goal, show_if_zero=False) }}
+                  </span>
+                  {{ account_row.goal_type if account_row.display_goal else '' }}
+                  {% if not account_row.is_non_budget() and not account_row.is_fully_funded %}
+                      <progress max="1" value="{{account_row.goal_progress}}">
+                            &#x1F785;
+                      </progress>
+                  {% endif %}
+              </span>
+                {% if account_row.is_non_budget() %}
+                  <span class="balance-children">
+                      {{ extension.format_amount(extension._row_children(grows, account), show_if_zero=False) }}
+                  </span>
+                {% endif %}
+            </span>
+
+            {% if account_row.is_non_budget() %}
+            <span class="num"></span>
+            {% else %}
+            <span class="num {{ 'has-balance' if budgeted else '' }}">
+              <span class="balance {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
+                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
+                  {{ extension.format_amount(budgeted) }}
+                </a>
+              </span>
+              <span class="balance-children {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
+                <a href="{{ url_for('account', name=account.account, time=period) }}">
+                  {{ extension.format_amount(extension._row_children(brows, account), show_if_zero=True) }}
+                </a>
+              </span>
+            </span>
+            {% endif %}
+
+
+            <span class="num {{ 'has-balance' if spent else '' }}">
+              <span class="balance spent {{ 'negative' if spent.number < 0 else 'positive' if spent.number > 0 else '' }}">
+                <a href="{{ url_for('account', name=account.account, time=period) }}">
+                  {{ extension.format_amount(spent, show_if_zero=False) }}
+                </a>
+              </span>
+              <span class="balance-children ">
+                <a href="{{ url_for('account', name=account.account, time=period) }}">
+                  {{ extension.format_amount(extension._row_children(srows, account), show_if_zero=False) }}
+                </a>
+              </span>
+            </span>
+
+            {% if not account_row.is_non_budget() %}
+                    <span class="num {{ 'has-balance' if available else '' }}">
+                      <span class="balance-children">
+                          {{ extension.format_amount(extension._row_children(vrows, account), show_if_zero=False) }}
+                      </span>
+                      <span class="balance">
+                          {% if extension._is_leaf(account) %}
+                            <span class="number available {{ 'negative' if available.number < 0 else 'underfunded' if account_row.is_underfunded else 'positive' if available.number > 0 else 'zero' if available.number == 0 else '' }}">
+
+                                {% if not extension._is_real_account(account) and account_row.has_any_goal %}
+                                {% if available.number >= 0 %}
+                                  {% if account_row.is_funded %}
+                                    &#x2714;
+                                    {% else%}
+                                        {% if account_row.is_underfunded %}
+                                        &#x1F785;
+                                        {% endif %}
+                                  {% endif %}
+                                {% endif %}
+                              {% endif %}
+                              {{ extension.format_amount(available, show_if_zero=True) }}
+                            </span>
+                          {% endif %}
+                      </span>
+                </span>
+           {% endif %}
+      </p>
+    <ol>
+    {{ loop(extension._sort_subtree(account)) }}
+    </ol>
+    </li>
+    {% endfor %}
+    </ol>
+
+{% else %}
+    {% if request.args.get('time') %}
+    <div>Postings filtered by time range: {{ request.args.get('time') }}</div>
+    {% endif %}
+    <div>No data for selected month.</div>
+{% endif %}
+
 <br />

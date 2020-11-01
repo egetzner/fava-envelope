@@ -301,6 +301,7 @@ class PeriodSummary:
     def __str__(self):
         return self.data.to_string()
 
+
 class PeriodData:
     def __init__(self, period, account_rows, accounts, is_current_month=False):
         self.period = period
@@ -308,6 +309,10 @@ class PeriodData:
         self.account_rows = account_rows
         self.accounts = accounts
         self.accounts.sort(key=sort_buckets)
+
+    @property
+    def has_content(self):
+        return len(self.accounts) > 0 and len(self.account_rows) > 0
 
     def account_row(self, a):
         if isinstance(a, Bucket):
@@ -382,9 +387,6 @@ class EnvelopeWrapper:
 
     def get_inventories(self, period: str, include_real_accounts):
 
-        if not self.initialized:
-            return [], period
-
         include_real_accounts = include_real_accounts if not None else False
 
         today = datetime.date.today()
@@ -395,21 +397,21 @@ class EnvelopeWrapper:
 
         rows = ddict(AccountRow)
 
+        if not self.initialized or period not in self.bucket_data:
+            return PeriodData(period, rows, [], period == today.strftime('%Y-%m'))
+
         buckets_by_month = self.bucket_data.xs(key=period, level=0, axis=1, drop_level=True)
         target_by_month = self.all_targets.xs(key=period, level=0, axis=1, drop_level=True)
         accounts_in_month = self.account_data.xs(key=period, level=0, axis=1, drop_level=True).fillna(0)
 
         for index, e_row in buckets_by_month.iterrows():
-            account_row = rows[index]
-            account_row.set_bucket_row(index, e_row)
+            rows[index].set_bucket_row(index, e_row)
 
         for index, e_row in target_by_month.iterrows():
-            account_row = rows[index]
-            account_row.set_targets(index, e_row)
+            rows[index].set_targets(index, e_row)
 
         for index, data in accounts_in_month.iterrows():
-            account_row = rows[index[1]]
-            account_row.set_account_row(index[1], data)
+            rows[index[1]].set_account_row(index[1], data)
 
         acc_hierarchy = get_hierarchy(self.account_to_buckets, include_real_accounts)
         return PeriodData(period, rows, acc_hierarchy, period == self.current_month)

@@ -98,9 +98,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
     def _make_table(self, period, show_accounts):
         """An account tree based on matching regex patterns."""
-
         self.set_show_accounts(show_accounts)
-
         self.generate_budget_df()
 
         today = datetime.date.today()
@@ -115,8 +113,8 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.period_start = datetime.date(year, month, 1)
         self.period_end = datetime.date(year + month // 12, month % 12 + 1, 1)
 
-        self.current_period = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
-        return self.current_period, period
+        self.period_data = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
+        return self.period_data, period
 
     def format_signed(self, value, show_if_zero=True):
         if not value and not show_if_zero:
@@ -165,14 +163,14 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return amount
 
     def account_row(self, a):
-        return self.current_period.account_row(a)
+        return self.period_data.account_row(a)
 
     def _value(self, inventory: Inventory):
         return self._only_position(inventory)
 
     def _row_children(self, rows, a):
         sum = Inventory()
-        all_matching = self.current_period.get_matching_rows(a)
+        all_matching = self.period_data.get_matching_rows(a)
         for sub in all_matching:
             item = sub.get(rows)
             if isinstance(item, Target):
@@ -181,7 +179,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return self._only_position(sum.reduce(convert.get_weight))
 
     def _is_leaf(self, a):
-        return self.current_period.is_leaf(a)
+        return self.period_data.is_leaf(a)
 
     def _has_children(self, a):
         return sum(self._is_visible(c) for c in a.values())
@@ -191,7 +189,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return is_real
 
     def _is_visible(self, a):
-        return self.current_period.is_visible(a, show_real=self.display_real_accounts)
+        return self.period_data.is_visible(a, show_real=self.display_real_accounts)
 
     def _period_for(self, date):
         return date.strftime('%Y-%m')
