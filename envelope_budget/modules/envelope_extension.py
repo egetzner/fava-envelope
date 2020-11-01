@@ -7,6 +7,8 @@ import pandas as pd
 import datetime
 from collections import defaultdict as ddict
 
+from dateutil.relativedelta import relativedelta
+
 from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets
@@ -53,6 +55,10 @@ class Target:
     @property
     def is_funded(self):
         return self.goal_progress is not None and self.goal_progress >= 1
+
+    @property
+    def is_overfunded(self):
+        return self.goal_progress is not None and self.goal_progress > 1.5
 
     def __str__(self):
         if self:
@@ -134,6 +140,10 @@ class AccountRow:
             return self.goal_monthly.is_funded
 
         return None
+
+    @property
+    def is_overfunded(self):
+        return self.display_goal.is_overfunded
 
     @property
     def has_any_goal(self):
@@ -219,22 +229,67 @@ class AccountRow:
                    f'\n Goals and Targets: {self.target} (monthly: {self.target_monthly}) - goal: {self.goal_monthly}'
 
 
+def get_month(date: datetime.datetime, fmt='%b'):
+    return date.strftime(fmt)
+
+
 class PeriodSummary:
     def __init__(self, period, data):
-        self.period = period
+        ref_date = datetime.datetime.strptime(period, '%Y-%m')
+        self.prev = get_month(ref_date - relativedelta(months=1))
+        self.next = get_month(ref_date + relativedelta(months=1))
+        self.month = get_month(ref_date)
         self.data = data
 
     @property
     def to_be_budgeted(self):
-        value = self.data['To Be Budgeted']
+        return self.get_value('To Be Budgeted', zero_sign=1)
+
+    @property
+    def available_funds(self):
+        return self.get_value('Avail Income', zero_sign=1)
+
+    @property
+    def income(self):
+        return self.get_value('Income', zero_sign=1)
+
+    @property
+    def overspent_prev(self):
+        return self.get_value('Overspent')
+
+    @property
+    def budgeted(self):
+        return self.get_value('Budgeted')
+
+    @property
+    def budgeted_next(self):
+        return self.get_value('Budgeted Future')
+
+    @property
+    def stealing(self):
+        return self.get_value('Stealing from Future')
+
+    @property
+    def is_stealing(self):
+        return self.stealing != 0
+
+    def get_value(self, name, zero_sign=-1):
+        value = self.data.get(name, 0) if self.data is not None else 0
+        if value == 0:
+            return zero_sign*abs(value)
+
         return value
 
     def get_table(self):
-        display_names = {'Avail Income': 'Funds for month',
-                          'Overspent': 'Overspent in prev month',
-                          'Budgeted': 'Budgeted for month',
-                          'Budgeted Future': 'Budgeted in next month',
-                          #'To Be Budgeted': 'To be budgeted (for month)'
+
+        income = f"{self.month} Income: {self.data['Income']:,.2f}"
+        stealing_amount = self.data['Stealing from Future']
+        stealing_text = f' ({stealing_amount:,.2f} in {self.next})' if stealing_amount < 0 else ''
+
+        display_names = {'Avail Income': f'Funds for {self.month} ({income})',
+                          'Overspent': f'Overspent in {self.prev}',
+                          'Budgeted': f'Budgeted for {self.month}',
+                          'Budgeted Future': f'Budgeted in {self.next}{stealing_text}',
                          }
 
         if self.data is not None:

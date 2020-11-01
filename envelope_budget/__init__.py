@@ -75,13 +75,15 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         return self.display_real_accounts
 
     def get_summary(self, month):
-        logging.debug(f'get_summary {month}')
         return self.envelopes.get_summary(month) if self.envelopes.initialized else None
 
     def generate_income_query_tables(self, month):
         types = [('Amount', str(Decimal)), ('Name', str(str))]
         st = self.get_summary(month)
-        return types, [{'Name': x[0], 'Amount': x[1]} for x in st.get_table().iteritems()] if st is not None else []
+        if st is None:
+            return types, []
+
+        return types, [{'Name': x[0], 'Amount': x[1]} for x in st.get_table().iteritems()]
 
     # ----
 
@@ -115,6 +117,11 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
         self.current_period = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
         return self.current_period, period
+
+    def format_signed(self, value, show_if_zero=True):
+        if not value and not show_if_zero:
+            return ''
+        return f'{value:+,.2f}'
 
     def format_currency(self, value, currency=None, show_if_zero=False):
         if not value and not show_if_zero:

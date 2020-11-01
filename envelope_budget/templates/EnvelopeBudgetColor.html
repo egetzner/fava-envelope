@@ -43,24 +43,8 @@
     margin: auto;
 }
 
-.to-be-budgeted {
-  padding-left: 0.7em;
-  padding-right: 0.7em;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  background-color: var(--color-budget-positive);
-  color: white;
-}
-
-.large-number {
-  font-size: 2em;
-  align: center;
-}
-
-.small-description {
-  font-size: 0.8em;
-  font-weight: normal;
-  text-align: center;
+.overfunded {
+    font-weight: bold;
 }
 
 .to-be-budgeted.zero {
@@ -146,6 +130,58 @@ progress[value] {
     text-decoration: underline;
 }
 
+.to-be-budgeted {
+  margin-bottom: 0.8em;
+  padding: 1.5em;
+  padding-top: 2px;
+  padding-bottom: 5px;
+  border-radius: 5px;
+  background-color: var(--color-budget-positive);
+  color: white;
+}
+
+.large-number {
+  font-size: 2em;
+  text-align: center;
+  align: center;
+  padding: 0em;
+}
+
+.small-description {
+  font-size: 0.9em;
+  font-weight: normal;
+  text-align: center;
+  padding: 0em;
+}
+
+#summary {
+    margin-left: 1em;
+    font-size: 0.8em;
+    border: 0px solid purple;
+    border-collapse: collapse;
+}
+
+#summary tbody tr:nth-child(even) td,
+#summary tbody tr:nth-child(odd) td,
+#summary tbody tr.even td,
+#summary tbody tr.odd td {
+    background: white;
+    border: 0px solid white;
+    border-collapse: collapse;
+    padding: 0em;
+    padding-right: 0.5em;
+}
+
+#summary tbody tr.stealing {
+  color: var(--color-budget-negative);
+  font-weight: bold;
+}
+
+.summary-num {
+  font-family: var(--font-family-monospaced);
+  font-weight: 500;
+  text-align: right;
+}
 </style>
 {% set show_accounts = extension.set_show_accounts(request.args.get('show_accounts')) %}
 {% set data, period = extension.make_table(request.args.get('period'), request.args.get('show_accounts')) %}
@@ -155,21 +191,49 @@ progress[value] {
 <div class="headerline">
     <h3>
       <a href="{{ url_for_current(period=extension._prev_month(),show_accounts=show_accounts) }}">&lt;&lt;</a> |
-        <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}}</span>
-      <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}"> (Current period) </a> |
+        <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}} </span>
+        {% if not data.is_current %}
+        <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}">(Current period) </a>
+        {% endif %} |
       <a href="{{ url_for_current(period=extension._next_month(),show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
-
-    <span class="to-be-budgeted {{ 'zero' if summary.to_be_budgeted == 0 else 'negative' if summary.to_be_budgeted < 0 else 'positive' }}">
-        <div class="large-number" align="center">
-            &euro; {{ extension.format_currency(summary.to_be_budgeted, currency='EUR', show_if_zero=True) }}
-        </div>
-        <div class="small-description">to be budgeted</div>
-    </span>
-
-    {{ querytable.querytable(None, income_table[0], income_table[1]) }}
 </div>
 
+<div class="headerline">
+    <div class="to-be-budgeted {{ 'zero' if summary.to_be_budgeted == 0 else 'negative' if summary.to_be_budgeted < 0 else 'positive' }}">
+        <div class="large-number">
+            {{ extension.format_currency(summary.to_be_budgeted, currency='EUR', show_if_zero=True) }}
+        </div>
+        <div class="small-description">to be budgeted</div>
+    </div>
+
+    <div>
+        <table id="summary" class="other">
+        <tbody>
+            <tr>
+                <td class="summary-num">{{ extension.format_signed(summary.available_funds) }}</td>
+                <td >Funds for {{ summary.month }} (Income: {{ extension.format_signed(summary.income) }})</td>
+            </tr>
+            <tr>
+                <td class="summary-num">{{ extension.format_signed(summary.overspent_prev, show_if_zero=True) }}</td>
+                <td >Overspent in {{ summary.prev }} </td>
+            </tr>
+            <tr>
+                <td class="summary-num">{{ extension.format_signed(summary.budgeted, show_if_zero=True) }}</td>
+                <td >Budgeted in {{ summary.month }} </td>
+            </tr>
+            <tr class="{{ 'stealing' if summary.is_stealing else '' }}">
+                <td class="summary-num">{{ extension.format_signed(summary.budgeted_next, show_if_zero=True) }}</td>
+                <td >Budgeted in Future
+                    {% if summary.is_stealing %}
+                    ({{ extension.format_signed(summary.stealing) }} in {{ summary.next }})
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+</div>
 
 <div class="headerline">
   {% for m in extension.get_budgets_months_available() %}
@@ -227,7 +291,9 @@ progress[value] {
 
         <span class="num {{ 'has-balance' if goal else '' }}">
           <span class="balance goal">
-              {{ extension.format_amount(goal, show_if_zero=False) }}
+              <span class="{{ 'overfunded' if account_row.is_overfunded else '' }}">
+                {{ extension.format_amount(goal, show_if_zero=False) }}
+              </span>
               {{ account_row.goal_type if account_row.display_goal else '' }}
               {% if not account_row.is_non_budget() and not account_row.is_fully_funded %}
                   <progress max="1" value="{{account_row.goal_progress}}">

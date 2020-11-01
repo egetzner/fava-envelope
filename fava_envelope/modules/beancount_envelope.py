@@ -201,13 +201,16 @@ class BeancountEnvelope:
             sum_total = self.income_df[month].sum()
             if (index == len(months)-1) or sum_total < 0:
                 self.income_df.loc["Budgeted Future", month] = Decimal(0.00)
+                income_df_detail.loc['Stealing from Future', month] = Decimal(0.00)
             else:
                 next_month = months[index+1]
                 opp_budgeted_next_month = self.income_df.loc["Budgeted",next_month] * -1
-                income_df_detail.loc['Stealing from Future', month] = opp_budgeted_next_month > sum_total
+                diff = sum_total - opp_budgeted_next_month
+                income_df_detail.loc['Stealing from Future', month] = Decimal(diff) if diff < 0 else Decimal(0.00)
                 if opp_budgeted_next_month < sum_total:
                     self.income_df.loc["Budgeted Future", month] = Decimal(-1*opp_budgeted_next_month)
                 else:
+                    #logging.warning(f"{month} stealing from future {next_month}: {diff}")
                     self.income_df.loc["Budgeted Future", month] = Decimal(-1*sum_total)
 
         # Set to be budgeted

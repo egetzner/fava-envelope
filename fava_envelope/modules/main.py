@@ -29,9 +29,9 @@ def main():
     ext = BeancountEnvelope(entries, errors, options_map)
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
-    summary = ge.get_summary("2020-10")
+    summary = ge.get_summary("2020-11")
     logging.debug(summary)
-    logging.debug(summary.to_be_budgeted)
+    logging.debug(summary.get_table())
 
     summary = ge.get_summary("2020-12")
     logging.debug(summary.to_be_budgeted)
