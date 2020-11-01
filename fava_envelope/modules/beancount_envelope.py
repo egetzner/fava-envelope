@@ -206,8 +206,11 @@ class BeancountEnvelope:
         max_future_spending = all_future_spending - future_delta
 
         future_budget = max_future_spending[future_delta < 0].add(all_future_spending[future_delta >= 0], fill_value=0)
-        tbb = remaining + future_budget
-        stealing = all_future_spending[remaining == 0]
+        future_budget = future_budget[remaining > 0]
+        tbb = remaining.add(future_budget, fill_value=0)
+
+        cover_next_month = remaining[remaining >= 0] + spent_next_month
+        stealing = cover_next_month[cover_next_month < 0]
 
         self.income_df.loc['To Be Budgeted'] = tbb
         self.income_df.loc['Budgeted Future'] = future_budget

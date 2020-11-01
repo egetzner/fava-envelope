@@ -29,7 +29,7 @@ def main():
     ext = BeancountEnvelope(entries, errors, options_map)
     ge = EnvelopeWrapper(entries, errors, options_map, ext)
 
-    #logging.info(ge.income_tables)
+    logging.info(ge.income_tables)
 
     if len(errors) == 0:
         logging.info('no errors found')

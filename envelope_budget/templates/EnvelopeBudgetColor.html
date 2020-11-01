@@ -189,6 +189,7 @@ progress[value] {
 {% set income_table = extension.generate_income_query_tables(period) %}
 
 <div class="headerline">
+    <div>
     <h3>
       <a href="{{ url_for_current(period=extension._prev_month(),show_accounts=show_accounts) }}">&lt;&lt;</a> |
         <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}}</span>
@@ -198,6 +199,14 @@ progress[value] {
          |
       <a href="{{ url_for_current(period=extension._next_month(),show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
+    </div>
+    <div>
+    {% if extension.display_real_accounts %}
+        <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
+    {% else %}
+        <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True) }}';">Accounts</button>
+    {% endif %}
+    </div>
 </div>
 
 <div class="headerline">
@@ -240,11 +249,6 @@ progress[value] {
   {% for m in extension.get_budgets_months_available() %}
   <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for_current(period=m,show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
   {% endfor %}
-    {% if extension.display_real_accounts %}
-        <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=False) }}';">Accounts</button>
-    {% else %}
-        <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for_current(period=period,show_accounts=True) }}';">Accounts</button>
-    {% endif %}
 </div>
 
 {% set grows = "goals" %}
