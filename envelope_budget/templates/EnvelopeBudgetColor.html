@@ -3,6 +3,30 @@
 {% import "_query_table.html" as querytable with context %}
 
 <style>
+:root {
+/* light theme*/
+  --color-envelope-bg-negative: #f7c1b5;
+  --color-envelope-fg-negative: #300b03;
+  --color-envelope-bg-positive: #c4ecbb;
+  --color-envelope-fg-positive: #143d0b;
+  --color-envelope-bg-attention: #f9e1a9;
+  --color-envelope-fg-attention: #2a1704;
+  --color-envelope-bg-zero: #e2e1e6;
+  --color-envelope-fg-zero: #302f34;
+
+/*fava colors*/
+/*
+  --color-envelope-bg-negative: var(--color-budget-negative);
+  --color-envelope-fg-negative: white;
+  --color-envelope-bg-positive: var(--color-budget-positive);
+  --color-envelope-fg-positive: white;
+  --color-envelope-bg-attention: #ff9d00;
+  --color-envelope-fg-attention: white;
+  --color-envelope-bg-zero: #cccbd0;
+  --color-envelope-fg-zero: white;
+*/
+}
+
 .tree-table .balance.negative {
   color: var(--color-budget-negative);
   font-weight: bold;
@@ -57,44 +81,33 @@
   background-color: var(--color-budget-negative);
 }
 
-.tree-table .available.underfunded {
+.tree-table .available{
   padding-left: 0.7em;
   padding-right: 0.7em;
   padding-top: 2px;
   padding-bottom: 2px;
-  background-color: #ff9d00;
-  color: white;
-  font-weight: bold;
+  font-weight: 500;
+}
+
+.tree-table .available.underfunded {
+  background-color: var(--color-envelope-bg-attention);
+  color: var(--color-envelope-fg-attention);
 }
 
 .tree-table .available.negative {
-  padding-left: 0.7em;
-  padding-right: 0.7em;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  background-color: var(--color-budget-negative);
-  color: white;
+  background-color: var(--color-envelope-bg-negative);
+  color: var(--color-envelope-fg-negative);
   font-weight: bold;
 }
 
 .tree-table .available.positive {
-  padding-left: 0.7em;
-  padding-right: 0.7em;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  background-color: var(--color-budget-positive);
-  color: white;
-  font-weight: bold;
+  background-color: var(--color-envelope-bg-positive);
+  color: var(--color-envelope-fg-positive);
 }
 
 .tree-table .available.zero {
-  padding-left: 0.7em;
-  padding-right: 0.7em;
-  padding-top: 2px;
-  padding-bottom: 2px;
-  background-color: #e0e0e0;
-  color: gray;
-  font-weight: bold;
+  background-color: var(--color-envelope-bg-zero);
+  color: var(--color-envelope-fg-zero);
 }
 
 .tree-table .bucket.budget {
