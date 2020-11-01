@@ -147,7 +147,6 @@ class BeancountEnvelope:
         # Calculate Starting Balance Income
         starting_balance, _ = self.query_account_balances(f'{months[0]}-01')
         self.income_df[months[0]]["Avail Income"] += starting_balance
-        income_df_detail.loc["Rollover Funds", months[0]] = starting_balance
 
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
 
@@ -188,7 +187,6 @@ class BeancountEnvelope:
                 continue
             else:
                 prev_month = months[index-1]
-                income_df_detail.loc['Rollover Funds', month] = Decimal(income_df_detail[prev_month].sum(axis=0))
 
                 self.income_df.loc["Avail Income", month] = \
                     self.income_df.loc["Avail Income",month] + \
@@ -196,28 +194,26 @@ class BeancountEnvelope:
                     self.income_df.loc["Overspent", prev_month] + \
                     self.income_df.loc["Budgeted", prev_month]
 
-        # Set Budgeted in the future
-        for index, month in enumerate(months):
-            sum_total = self.income_df[month].sum()
-            if (index == len(months)-1) or sum_total < 0:
-                self.income_df.loc["Budgeted Future", month] = Decimal(0.00)
-                income_df_detail.loc['Stealing from Future', month] = Decimal(0.00)
-            else:
-                next_month = months[index+1]
-                opp_budgeted_next_month = self.income_df.loc["Budgeted",next_month] * -1
-                diff = sum_total - opp_budgeted_next_month
-                income_df_detail.loc['Stealing from Future', month] = Decimal(diff) if diff < 0 else Decimal(0.00)
-                if opp_budgeted_next_month < sum_total:
-                    self.income_df.loc["Budgeted Future", month] = Decimal(-1*opp_budgeted_next_month)
-                else:
-                    #logging.warning(f"{month} stealing from future {next_month}: {diff}")
-                    self.income_df.loc["Budgeted Future", month] = Decimal(-1*sum_total)
+        remaining = self.income_df.sum(axis=0, numeric_only=False)
+        shifted = remaining.shift(+1)
+        shifted[0] = starting_balance
+        income_df_detail.loc['Rollover Funds'] = shifted
 
-        # Set to be budgeted
-        for index, month in enumerate(months):
-            self.income_df.loc["To Be Budgeted", month] = Decimal(self.income_df[month].sum())
+        spent = self.income_df.filter(items=['Overspent', 'Budgeted'], axis=0).sum(axis=0, numeric_only=False)
+        spent_next_month = spent.shift(-1).fillna(0)
+        all_future_spending = spent_next_month.loc[::-1].cumsum().loc[::-1]
+        future_delta = all_future_spending.add(remaining[all_future_spending < 0], fill_value=Decimal(0))
+        max_future_spending = all_future_spending - future_delta
 
-        summary_info = pd.concat([self.income_df, income_df_detail], axis=0)
+        future_budget = max_future_spending[future_delta < 0].add(all_future_spending[future_delta >= 0], fill_value=0)
+        tbb = remaining + future_budget
+        stealing = all_future_spending[remaining == 0]
+
+        self.income_df.loc['To Be Budgeted'] = tbb
+        self.income_df.loc['Budgeted Future'] = future_budget
+        income_df_detail.loc['Stealing from Future'] = stealing
+
+        summary_info = pd.concat([self.income_df, income_df_detail], axis=0).fillna(Decimal(0))
         return summary_info, self.envelope_df, self.actual_expenses, self.current_month
 
     def is_income(self, account):

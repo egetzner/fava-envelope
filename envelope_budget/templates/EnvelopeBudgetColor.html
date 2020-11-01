@@ -191,10 +191,11 @@ progress[value] {
 <div class="headerline">
     <h3>
       <a href="{{ url_for_current(period=extension._prev_month(),show_accounts=show_accounts) }}">&lt;&lt;</a> |
-        <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}} </span>
+        <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}}</span>
         {% if not data.is_current %}
-        <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}">(Current period) </a>
-        {% endif %} |
+        <a href="{{ url_for_current(period=extension._period_for(today()),show_accounts=show_accounts) }}">(Go to current) </a>
+        {% endif %}
+         |
       <a href="{{ url_for_current(period=extension._next_month(),show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
 </div>
