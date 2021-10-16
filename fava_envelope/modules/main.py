@@ -1,43 +1,24 @@
 import argparse
 import logging
-import coloredlogs
-
-from envelope_budget.modules.envelope_extension import EnvelopeWrapper
-
-try:
-    import ipdb
-    #ipdb.set_trace()
-except ImportError:
-    pass
 
 from beancount import loader
 
 from fava_envelope.modules.beancount_envelope import BeancountEnvelope
 
+
 def main():
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(levelname)-8s:\n%(message)s')
-
-    coloredlogs.install(level=logging.DEBUG, fmt='%(asctime)s,%(msecs)03d %(hostname)s %(name)s[%(process)d] %(levelname)s\n%(message)s')
-
+    logging.basicConfig(level=logging.INFO, format="%(levelname)-8s: %(message)s")
     parser = argparse.ArgumentParser(description="beancount_envelope")
-    parser.add_argument('filename', help='path to beancount journal file')
+    parser.add_argument("filename", help="path to beancount journal file")
     args = parser.parse_args()
 
     # Read beancount input file
-    entries, errors, options_map = loader.load_file(args.filename)
-    ext = BeancountEnvelope(entries, errors, options_map)
-    ge = EnvelopeWrapper(entries, errors, options_map, ext)
-
-    logging.info(ge.income_tables)
-    logging.info(ge.get_inventories('2021-02', False))
-
-    if len(errors) == 0:
-        logging.info('no errors found')
-
-    for e in errors:
-        logging.error(e)
+    entries, _, options_map = loader.load_file(args.filename)
+    ext = BeancountEnvelope(entries, options_map)
+    df1, df2 = ext.envelope_tables()
+    print(df1)
+    print(df2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,58 +1,23 @@
 """
 """
-
+from beancount.core.number import Decimal
 from fava.ext import FavaExtensionBase
-from beancount.core.number import Decimal, D
-from beancount.core import data
-
 
 from .modules.beancount_envelope import BeancountEnvelope
 
-from datetime import date
-import collections
-import traceback
-
-LoadError = collections.namedtuple('LoadError', 'source message entry')
 
 class EnvelopeBudget(FavaExtensionBase):
-    '''
-    '''
+    """"""
+
     report_title = "Envelope Budget"
 
-    def __init__(self, ledger, config):
-        self.income_tables = None
-        self.envelope_tables = None
-        self.current_month = None
-        ledger.errors = list(filter(lambda i: not (type(i) is LoadError), ledger.errors))
-        super().__init__(ledger, config)
-
     def generate_budget_df(self):
-
-        self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
-        try:
-            module = BeancountEnvelope(
-                self.ledger.entries,
-                self.ledger.errors,
-                self.ledger.options
-            )
-            self.income_tables, self.envelope_tables, _, self.current_month = module.envelope_tables()
-
-        except:
-            self.ledger.errors.append(LoadError(data.new_metadata("<fava-envelope>", 0), traceback.format_exc(), None))
+        module = BeancountEnvelope(self.ledger.entries, self.ledger.options)
+        self.income_tables, self.envelope_tables = module.envelope_tables()
 
     def get_budgets_months_available(self):
-            self.generate_budget_df()
-            return [] if self.income_tables is None else self.income_tables.columns
-
-    def get_current_month(self, period):
-        today = date.today()
-
-        if period is not None:
-            return period
-        else:
-            year = today.year
-            month = today.month
-            return f'{year:04}-{month:02}'
+        self.generate_budget_df()
+        return self.income_tables.columns
 
     def generate_income_query_tables(self, month):
 
@@ -62,28 +27,43 @@ class EnvelopeBudget(FavaExtensionBase):
 
         income_table_rows = []
 
-        if month is not None and self.income_tables is not None:
-            row = {}
-            income_table_rows.append({
-                "Name": "Funds for month",
-                "Amount": self.income_tables[month]["Avail Income"]
-            })
-            income_table_rows.append({
-                "Name": "Overspent in prev month",
-                "Amount": self.income_tables[month]["Overspent"]
-            })
-            income_table_rows.append({
-                "Name": "Budgeted for month",
-                "Amount": self.income_tables[month]["Budgeted"]
-            })
-            income_table_rows.append({
-                "Name": "To be budgeted for month",
-                "Amount": self.income_tables[month]["To Be Budgeted"]
-            })
-            income_table_rows.append({
-                "Name": "Budgeted in the future",
-                "Amount": self.income_tables[month]["Budgeted Future"]
-            })
+        if month is not None:
+            income_table_rows.append(
+                {
+                    "Name": "Funds for month",
+                    "Amount": self.income_tables[month]["Avail Income"],
+                },
+            )
+            income_table_rows.append(
+                {
+                    "Name": "Overspent in prev month",
+                    "Amount": self.income_tables[month]["Overspent"],
+                },
+            )
+            income_table_rows.append(
+                {
+                    "Name": "Budgeted for month",
+                    "Amount": self.income_tables[month]["Budgeted"],
+                },
+            )
+            income_table_rows.append(
+                {
+                    "Name": "To be budgeted for month",
+                    "Amount": self.income_tables[month]["To Be Budgeted"],
+                },
+            )
+            income_table_rows.append(
+                {
+                    "Name": "Budgeted in the future",
+                    "Amount": self.income_tables[month]["Budgeted Future"],
+                },
+            )
+            income_table_rows.append(
+                {
+                    "Name": "Income",
+                    "Amount": self.income_tables[month]["Income"],
+                },
+            )
 
         return (income_table_types, income_table_rows)
 
@@ -97,7 +77,7 @@ class EnvelopeBudget(FavaExtensionBase):
 
         envelope_table_rows = []
 
-        if month is not None and self.envelope_tables is not None:
+        if month is not None:
             for index, e_row in self.envelope_tables.iterrows():
                 row = {}
                 row["Account"] = index
