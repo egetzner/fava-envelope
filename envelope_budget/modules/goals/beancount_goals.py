@@ -66,7 +66,9 @@ class EnvelopesWithGoals:
         goals_for_accounts = self.parse_fava_budget(date_start, date_end)
         full_hierarchy = add_bucket_levels(goals_for_accounts, multi_level_index, mappings)
 
+        # these are float64 (IF EMPTY)
         spent = envelopes.xs(key='activity', level=1, axis=1)
+        # these are decimals
         budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
         available = envelopes.xs(key='available', level=1, axis=1)
         avail_som = available.add(spent.mul(-1), fill_value=0)
@@ -74,7 +76,7 @@ class EnvelopesWithGoals:
         ref_amount = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
                             budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
 
-        spending_goals = compute_progress(full_hierarchy.sum(level=0, axis=0), ref_amount)
+        spending_goals = compute_progress(full_hierarchy.sum(level=0, axis=0, numeric_only=False), ref_amount)
         spending_goals.name = 'spend'
         return full_hierarchy, spending_goals
 
@@ -90,7 +92,7 @@ class EnvelopesWithGoals:
         budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
         spent = envelopes.xs(key='activity', level=1, axis=1)
 
-        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=Decimal(0.00)))
+        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=Decimal('0.00')))
         tm.name = 'target_m'
         return t, tm
 

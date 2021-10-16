@@ -232,7 +232,7 @@ class BeancountEnvelope:
         return account
 
     def _calculate_budget_activity_from_actual(self, actual_expenses: pd.DataFrame):
-        buckets_only = actual_expenses.sum(level=0, axis=0)
+        buckets_only = actual_expenses.sum(level=0, axis=0, numeric_only=False)
 
         income_columns = ['Income', 'Income:Deduction']
         self.income_df.loc["Avail Income", :] = Decimal(0.00)
@@ -341,6 +341,7 @@ class BeancountEnvelope:
         for e in self.entries:
             if isinstance(e, Custom) and e.type == "envelope":
                 if e.values[0].value == "allocate":
-                    month = f"{e.date.year}-{e.date.month:02}"
-                    bucket = e.values[1].value
-                    self.envelope_df.loc[bucket, (month, 'budgeted')] = Decimal(e.values[2].value)
+                    if self.date_start <= e.date <= self.date_end:
+                        month = f"{e.date.year}-{e.date.month:02}"
+                        bucket = e.values[1].value
+                        self.envelope_df.loc[bucket, (month, 'budgeted')] = Decimal(e.values[2].value)

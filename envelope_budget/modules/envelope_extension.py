@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 from enum import Enum
 
 from beancount.core.inventory import Inventory, Amount
@@ -358,14 +359,16 @@ class EnvelopeWrapper:
 
         self.income_tables, envelope_tables, all_activity, self.current_month = module.envelope_tables(parser)
 
-        from_accounts = all_activity.sum(axis=0, level=0)
+        # IMPORTANT: if this is empty, it defaults to type float64, which cannot be added.
+        from_accounts = all_activity.sum(axis=0, level=0, numeric_only=False)
         # from_buckets = envelope_tables.xs(key='activity', level=1, axis=1)
         # logging.info(from_buckets.eq(from_accounts).all(axis=1))
 
         budgeted = envelope_tables.xs(key='budgeted', level=1, axis=1)
         available = envelope_tables.xs(key='available', level=1, axis=1)
 
-        self.bucket_data = pd.concat({'activity': from_accounts, 'budgeted': budgeted, 'available': available}, axis=1).swaplevel(1, 0, axis=1)
+        all_data = pd.concat({'activity': from_accounts, 'budgeted': budgeted, 'available': available}, axis=1)
+        self.bucket_data = all_data.swaplevel(1, 0, axis=1).fillna(Decimal('0.00'))
 
         bg = EnvelopesWithGoals(entries, errors, options, module.currency)
         detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings,
