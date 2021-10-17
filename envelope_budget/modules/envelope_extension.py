@@ -11,7 +11,7 @@ from collections import defaultdict as ddict
 from dateutil.relativedelta import relativedelta
 
 from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
-from fava_envelope.modules.beancount_envelope import BeancountEnvelope
+from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets
 from envelope_budget.modules.hierarchy.beancount_hierarchy import Bucket, get_hierarchy, get_level_as_dict
 

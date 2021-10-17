@@ -12,7 +12,7 @@ from fava.ext import FavaExtensionBase
 from beancount.core.number import Decimal
 from beancount.core import data
 
-from fava_envelope.modules.beancount_envelope import BeancountEnvelope
+from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.envelope_extension import EnvelopeWrapper, Target
 
 import collections
