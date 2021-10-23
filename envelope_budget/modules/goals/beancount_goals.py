@@ -76,7 +76,7 @@ class EnvelopesWithGoals:
         ref_amount = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
                             budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
 
-        spending_goals = compute_progress(full_hierarchy.sum(level=0, axis=0, numeric_only=False), ref_amount)
+        spending_goals = compute_progress(full_hierarchy.groupby(level=0, axis=0).sum(numeric_only=False), ref_amount)
         spending_goals.name = 'spend'
         return full_hierarchy, spending_goals
 

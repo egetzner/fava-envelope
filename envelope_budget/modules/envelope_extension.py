@@ -360,7 +360,7 @@ class EnvelopeWrapper:
         self.income_tables, envelope_tables, all_activity, self.current_month = module.envelope_tables(parser)
 
         # IMPORTANT: if this is empty, it defaults to type float64, which cannot be added.
-        from_accounts = all_activity.sum(axis=0, level=0, numeric_only=False)
+        from_accounts = all_activity.groupby(axis=0, level=0).sum(numeric_only=False)
         # from_buckets = envelope_tables.xs(key='activity', level=1, axis=1)
         # logging.info(from_buckets.eq(from_accounts).all(axis=1))
 

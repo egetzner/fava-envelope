@@ -206,9 +206,9 @@ class BeancountEnvelope:
         future_delta = all_future_spending.add(remaining[all_future_spending < 0], fill_value=Decimal(0))
         max_future_spending = all_future_spending - future_delta
 
-        future_budget = max_future_spending[future_delta < 0].add(all_future_spending[future_delta >= 0], fill_value=0)
+        future_budget = max_future_spending[future_delta < 0].add(all_future_spending[future_delta >= 0], fill_value=Decimal(0))
         future_budget = future_budget[remaining > 0]
-        tbb = remaining.add(future_budget, fill_value=0)
+        tbb = remaining.add(future_budget, fill_value=Decimal(0))
 
         cover_next_month = remaining[remaining >= 0] + spent_next_month
         stealing = cover_next_month[cover_next_month < 0]
@@ -232,7 +232,7 @@ class BeancountEnvelope:
         return account
 
     def _calculate_budget_activity_from_actual(self, actual_expenses: pd.DataFrame):
-        buckets_only = actual_expenses.sum(level=0, axis=0, numeric_only=False)
+        buckets_only = actual_expenses.groupby(level=0, axis=0).sum(numeric_only=False)
 
         income_columns = ['Income', 'Income:Deduction']
         self.income_df.loc["Avail Income", :] = Decimal(0.00)
