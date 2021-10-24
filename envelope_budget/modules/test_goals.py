@@ -1,11 +1,7 @@
 import argparse
 import logging
-import datetime
-from decimal import Decimal
 
-from dateutil.relativedelta import relativedelta
-
-from envelope_budget.modules.envelope_extension import EnvelopeWrapper
+from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets
 from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 
@@ -16,8 +12,6 @@ except ImportError:
     pass
 
 from beancount import loader
-
-from fava_envelope.modules.beancount_envelope import BeancountEnvelope
 
 def main():
     logging.basicConfig(level=logging.INFO,
@@ -39,10 +33,10 @@ def main():
 
     detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings, all_activity.index, envelope_tables, current_month)
     targets, monthly_target = bg.get_targets(module.date_start, module.date_end, envelope_tables)
-    merged = merge_all_targets({'sg': spending, 't': targets, 'tm': monthly_target})
+    merged = merge_all_targets({'needed for spending': spending, 'saving balance': targets, 'monthly savings builder': monthly_target})
 
-    logging.info(envelope_tables.loc[:, '2020-10'].to_string())
-    logging.info(merged.loc[:, '2020-10'].to_string())
+    logging.info(envelope_tables.loc[:, '2021-10'].to_string())
+    logging.info(merged.loc[:, '2021-10'].to_string())
 
     if len(errors) == 0:
         logging.debug('no errors found')

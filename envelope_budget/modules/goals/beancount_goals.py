@@ -27,13 +27,13 @@ def _month_diff(start_date, end_date):
         return (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
 
 
-def compute_monthly_targets(envelopes, targets, remaining_months):
-    available = envelopes.xs(key='available', level=1, axis=1).filter(targets.index, axis=0)
+def compute_monthly_targets(available_envelopes, targets, remaining_months):
+    available = available_envelopes.filter(targets.index, axis=0).apply(pd.to_numeric, downcast='float')
     targets.columns = available.columns
     remaining_months.columns = available.columns
     div_months = remaining_months.add(1)
 
-    shifted = targets.add(available.shift(periods=1, axis='columns').mul(-1))
+    shifted = targets.apply(pd.to_numeric, downcast='float').add(available.shift(periods=1, axis='columns').mul(-1), fill_value=0)
     target_monthly = shifted[shifted > 0].div(div_months[div_months > 0])
 
     return target_monthly
@@ -47,7 +47,7 @@ def merge_dfs(dataframes):
 
 def compute_progress(target, ref_amount):
     target_df = merge_dfs({'amount': target, 'ref_amount': ref_amount.filter(target.index, axis=0)})
-    return target_df
+    return target_df.fillna(Decimal('0.00'))
 
 class EnvelopesWithGoals:
     def __init__(self, entries, errors, options_map, currency):
@@ -83,18 +83,22 @@ class EnvelopesWithGoals:
     def get_targets(self, date_start, date_end, envelopes):
 
         targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end)
-        targets_by_month = compute_monthly_targets(envelopes, targets, rem_months)
-        targets_by_month = targets_by_month.add(targets_monthly, fill_value=0)
+        available = envelopes.xs(key='available', level=1, axis=1)
 
-        t = compute_progress(targets, envelopes.xs(key='available', level=1, axis=1))
+        targets_by_month = compute_monthly_targets(available, targets, rem_months)
+        targets_monthly = targets_monthly.apply(pd.to_numeric, downcast='float')
+        targets_monthly.columns = targets_by_month.columns
+
+        targets_by_month = targets_by_month.add(targets_monthly, fill_value=0)
+        t = compute_progress(targets, available)
         t.name = 'target'
 
         budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
         spent = envelopes.xs(key='activity', level=1, axis=1)
 
-        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=Decimal('0.00')))
+        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=0))
         tm.name = 'target_m'
-        return t, tm
+        return t.applymap(Decimal), tm.applymap(Decimal)
 
     def parse_fava_budget(self, start_date, end_date):
         custom = [e for e in self.entries if isinstance(e, Custom)]
