@@ -31,16 +31,13 @@ class EnvelopeBudget(FavaExtensionBase):
             if month in self.get_budgets_months_available(currency):
                 return True
         return False
-        
-        
-    
+
     def get_currencies(self):
-        if "currencies" in self.config:
-            return self.config["currencies"]
+        if "budgets" in self.config:
+            return self.config["budgets"].keys
         else:
             return None
-    
-    
+
     def generate_income_query_tables(self, month):
 
         income_table_types = []

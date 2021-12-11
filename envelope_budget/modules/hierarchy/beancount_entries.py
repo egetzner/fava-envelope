@@ -4,7 +4,7 @@ import pandas as pd
 import datetime
 
 from beancount.core.number import Decimal
-from beancount.core import convert, prices, inventory, data, account_types
+from beancount.core import amount, convert, prices, inventory, data, account_types
 from beancount.parser import options
 
 from envelope_budget.modules.hierarchy.beancount_hierarchy import map_to_bucket
@@ -86,7 +86,12 @@ class TransactionParser:
             if any(self.is_income(p.account) for p in entry.postings):
                 for posting in entry.postings:
                     if posting.units.currency != self.currency:
-                        continue
+                        orig=posting.units.number
+                        if posting.price is not None:
+                            converted=posting.price.number*orig
+                            posting=data.Posting(posting.account,amount.Amount(converted,self.currency), posting.cost, None, posting.flag,posting.meta)
+                        else:
+                            continue
                     if self.is_budget_account(posting.account):
                         continue
 

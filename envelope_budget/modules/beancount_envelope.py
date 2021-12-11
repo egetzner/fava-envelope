@@ -15,6 +15,7 @@ from beancount.core.number import Decimal
 from beancount.core import data
 from beancount.core import prices, inventory, convert
 from beancount.core import account_types
+from beancount.core import amount
 from beancount.query import query
 from beancount.core.data import Custom
 from beancount.parser import options
@@ -91,20 +92,6 @@ class BeancountEnvelope:
 
         return budget_accounts, mappings, max_date
 
-    def query_account_balances(self, date):
-        balance = Decimal(0.0)
-        query_str = f"select account, convert(sum(position),'{self.currency}') from close on {date} group by 1 order by 1;"
-        rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
-
-        positions = dict()
-        for row in rows[1]:
-            if any(regexp.match(row[0]) for regexp in self.budget_accounts):
-                if row[1] is not None:
-                    balance += row[1]
-                    positions[row[0]] = row[1]
-
-        return balance, pd.DataFrame(data=positions, index=[date]).transpose()
-
     def envelope_tables(self, entry_parser=None):
 
         months = []
@@ -146,7 +133,15 @@ class BeancountEnvelope:
         income_df_detail = income_df_detail.rename(index={'Avail Income': "Income"})
 
         # Calculate Starting Balance Income
-        starting_balance, _ = self.query_account_balances(f'{months[0]}-01')
+        starting_balance = Decimal(0.0)
+        query_str = f"select account, convert(sum(position),'{self.currency}') from close on {months[0]}-01 group by 1 order by 1;"
+        rows = query.run_query(self.entries, self.options_map, query_str, numberify=True)
+
+        for row in rows[1]:
+            if any(regexp.match(row[0]) for regexp in self.budget_accounts):
+                if row[1] is not None:
+                    starting_balance += row[1]
+
         self.income_df[months[0]]["Avail Income"] += starting_balance
 
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
@@ -281,7 +276,12 @@ class BeancountEnvelope:
 
                 account_type = account_types.get_account_type(account)
                 if posting.units.currency != self.currency:
-                    continue
+                    orig=posting.units.number
+                    if posting.price is not None:
+                        converted=posting.price.number*orig
+                        posting=data.Posting(posting.account,amount.Amount(converted,self.currency), posting.cost, None, posting.flag,posting.meta)
+                    else:
+                        continue
 
                 if account_type == self.acctypes.income:
                     account = "Income"
