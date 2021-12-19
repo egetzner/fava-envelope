@@ -7,7 +7,7 @@
 option "title" "Multi-Currency Budget"
 option "operating_currency" "USD"
 
-2010-01-01 custom "fava-extension" "fava_envelope" "{'currencies': ['USD', 'SFC']}"
+2010-01-01 custom "fava-extension" "fava_envelope" "{'budgets': {'Dollar': ('USD', 'USD'), 'Foreign: ('SFC', 'SFC')}]}"
 
 2010-01-01 custom "envelopeUSD" "start date" "2016-01"
 2010-01-01 custom "envelopeUSD" "budget account" "Assets:US:BofA:Checking"
