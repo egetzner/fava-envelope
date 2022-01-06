@@ -47,6 +47,19 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             future_rollover = self.config.get('future_rollover')
             show_real_accounts = self.config.get('show_real_accounts')
 
+            if 'budgets' in self.config:
+                budgets = self.config['budgets']
+            else:
+                logging.error("budget config not found!")
+
+            if budgets is not None:
+                for key in budgets:
+                    values = budgets[key]
+                    suffix = values[0]
+                    currency = values[1]
+
+                    logging.debug(f"budget '{key}': suffix: {suffix}, currency: {currency}")
+
             module = BeancountEnvelope(
                 self.ledger.entries,
                 self.ledger.errors,

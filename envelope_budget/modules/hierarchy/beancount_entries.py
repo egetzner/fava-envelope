@@ -33,9 +33,9 @@ class TransactionParser:
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
 
-    def is_income(self, account):
+    def is_income(self, account, income_accounts):
         account_type = account_types.get_account_type(account)
-        return account_type == self.acctypes.income
+        return account_type == self.acctypes.income or any(regexp.match(account) for regexp in income_accounts)
 
     def is_budget_account(self, account):
         if any(regexp.match(account) for regexp in self.budget_accounts):
@@ -49,9 +49,9 @@ class TransactionParser:
 
         return account
 
-    def parse_transactions(self, start, end):
+    def parse_transactions(self, start, end, income_accounts):
 
-        balances = self._parse_actual_postings(start, end)
+        balances = self._parse_actual_postings(start, end, income_accounts)
         sbalances = self._sort_and_reduce(balances)
         date_range = _get_date_range(start, end)
 
@@ -69,7 +69,7 @@ class TransactionParser:
 
         return actual_expenses
 
-    def _parse_actual_postings(self, start_date, end_date):
+    def _parse_actual_postings(self, start_date, end_date, income_accounts):
 
         # Accumulate expenses for the period
         balances = collections.defaultdict(
@@ -83,7 +83,7 @@ class TransactionParser:
             if not any(self.is_budget_account(p.account) for p in entry.postings):
                 continue
 
-            if any(self.is_income(p.account) for p in entry.postings):
+            if any(self.is_income(p.account, income_accounts) for p in entry.postings):
                 for posting in entry.postings:
                     if posting.units.currency != self.currency:
                         orig=posting.units.number
@@ -96,10 +96,10 @@ class TransactionParser:
                         continue
 
                     account_type = account_types.get_account_type(posting.account)
-                    if account_type == self.acctypes.income:
+                    if account_type == self.acctypes.income or any(regexp.match(posting.account) for regexp in income_accounts):
                         bucket = "Income"
-                    elif account_type == self.acctypes.expenses:
-                        bucket = "Income:Deduction"
+                    #elif account_type == self.acctypes.expenses:
+                    #    bucket = "Income:Deduction"
                     else:
                         bucket = map_to_bucket(self.mappings, posting.account)
 

@@ -30,7 +30,7 @@ class BeancountEnvelope:
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
-        self.budget_accounts, self.mappings, max_date = self._find_envelop_settings()
+        self.budget_accounts, self.mappings, max_date, self.income_accounts = self._find_envelop_settings()
         self.show_real_accounts = show_real_accounts
 
         decimal_precison = '0.00'
@@ -64,6 +64,7 @@ class BeancountEnvelope:
     def _find_envelop_settings(self):
         budget_accounts= []
         mappings = []
+        income_accounts = []
 
         allocation_dates = set()
 
@@ -79,6 +80,8 @@ class BeancountEnvelope:
                     mappings.append(map_set)
                 if e.values[0].value == "allocate":
                     allocation_dates.add(e.date)
+                if e.values[0].value == "income account":
+                    income_accounts.append(re.compile(e.values[1].value))
 
         if len(allocation_dates) == 0:
             logging.warning("No envelope entries found")
@@ -90,7 +93,7 @@ class BeancountEnvelope:
             logging.warning('no budget accounts setup within given time range.')
             #self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
-        return budget_accounts, mappings, max_date
+        return budget_accounts, mappings, max_date, income_accounts
 
     def envelope_tables(self, entry_parser=None):
 
@@ -121,7 +124,8 @@ class BeancountEnvelope:
         self.envelope_df.index.name = "Envelopes"
 
         if entry_parser is not None:
-            self.actual_expenses = entry_parser.parse_transactions(start=self.date_start, end=self.date_end)
+            self.actual_expenses = entry_parser.parse_transactions(start=self.date_start, end=self.date_end,
+                                                                   income_accounts=self.income_accounts)
             self._calculate_budget_activity_from_actual(self.actual_expenses)
         else:
             self._calculate_budget_activity()
@@ -215,9 +219,9 @@ class BeancountEnvelope:
         summary_info = pd.concat([self.income_df, income_df_detail], axis=0).fillna(Decimal(0))
         return summary_info, self.envelope_df, self.actual_expenses, self.current_month
 
-    def is_income(self, account):
-        account_type = account_types.get_account_type(account)
-        return account_type == self.acctypes.income
+    #def is_income(self, account):
+    #    account_type = account_types.get_account_type(account)
+    #    return account_type == self.acctypes.income
 
     def _get_bucket(self, account):
         for regexp, target_account in self.mappings:
@@ -283,7 +287,8 @@ class BeancountEnvelope:
                     else:
                         continue
 
-                if account_type == self.acctypes.income:
+                if (account_type == self.acctypes.income
+                    or (any(regexp.match(account) for regexp in self.income_accounts))):
                     account = "Income"
                 elif any(regexp.match(posting.account) for regexp in self.budget_accounts):
                     continue
