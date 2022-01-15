@@ -33,7 +33,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
         self.income_tables = None
 
-    def generate_budget_df(self):
+    def generate_budget_df(self, budget):
 
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
 
@@ -52,18 +52,19 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             else:
                 logging.error("budget config not found!")
 
-            if budgets is not None:
-                for key in budgets:
-                    values = budgets[key]
-                    suffix = values[0]
-                    currency = values[1]
+            suffix = ''
+            if budgets:
+                budget = budget if budget else list(budgets.keys())[0]
 
-                    logging.debug(f"budget '{key}': suffix: {suffix}, currency: {currency}")
+            if budget and budget in budgets:
+                values = budgets[budget]
+                suffix = values[0]
+#               currency = values[1]
 
             module = BeancountEnvelope(
                 self.ledger.entries,
                 self.ledger.errors,
-                self.ledger.options,
+                self.ledger.options, suffix,
                 start_date, future_months, future_rollover, show_real_accounts
             )
 
@@ -71,6 +72,14 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         except:
             self.ledger.errors.append(
                 LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))
+
+    def get_budgets(self):
+        if 'budgets' in self.config:
+            budgets = self.config['budgets']
+            return [key for key in budgets]
+
+        return []
+
 
     def is_current(self, period):
         return self.envelopes.current_month == period
@@ -100,19 +109,19 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
     # ----
 
-    def make_table(self, period, show_accounts):
+    def make_table(self, period, show_accounts, budget=None):
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
         try:
             #logging.info(f"period: {period}, show accounts: {show_accounts}")
-            return self._make_table(period, show_accounts)
+            return self._make_table(period, show_accounts, budget)
         except:
             self.ledger.errors.append(
                 LoadError(data.new_metadata("<fava-envelope-table>", 0), traceback.format_exc(), None))
 
-    def _make_table(self, period, show_accounts):
+    def _make_table(self, period, show_accounts, budget):
         """An account tree based on matching regex patterns."""
         self.set_show_accounts(show_accounts)
-        self.generate_budget_df()
+        self.generate_budget_df(budget)
 
         today = datetime.date.today()
 
@@ -127,7 +136,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.period_end = datetime.date(year + month // 12, month % 12 + 1, 1)
 
         self.period_data = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
-        return self.period_data, period
+        return self.period_data, period, budget
 
     def format_signed(self, value, show_if_zero=True):
         if not value and not show_if_zero:

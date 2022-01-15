@@ -24,12 +24,14 @@ BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, errors, options_map, start_date=None, future_months=1, future_rollover=True, show_real_accounts=True):
+    def __init__(self, entries, errors, options_map, budget_postfix,
+                 start_date=None, future_months=1, future_rollover=True, show_real_accounts=True):
 
         self.entries = entries
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
+        self.customentry = "envelope" + budget_postfix if budget_postfix else "envelope"
         self.budget_accounts, self.mappings, max_date, self.income_accounts = self._find_envelop_settings()
         self.show_real_accounts = show_real_accounts
 
@@ -69,7 +71,7 @@ class BeancountEnvelope:
         allocation_dates = set()
 
         for e in self.entries:
-            if isinstance(e, Custom) and e.type == "envelope":
+            if isinstance(e, Custom) and e.type == self.customentry:
                 if e.values[0].value == "budget account":
                     budget_accounts.append(re.compile(e.values[1].value))
                 if e.values[0].value == "mapping":
@@ -80,6 +82,8 @@ class BeancountEnvelope:
                     mappings.append(map_set)
                 if e.values[0].value == "allocate":
                     allocation_dates.add(e.date)
+                if e.values[0].value == "currency":
+                    self.currency = e.values[1].value
                 if e.values[0].value == "income account":
                     income_accounts.append(re.compile(e.values[1].value))
 
@@ -344,7 +348,7 @@ class BeancountEnvelope:
     def _calc_budget_budgeted(self):
         rows = {}
         for e in self.entries:
-            if isinstance(e, Custom) and e.type == "envelope":
+            if isinstance(e, Custom) and e.type == self.customentry:
                 if e.values[0].value == "allocate":
                     if self.date_start <= e.date <= self.date_end:
                         month = f"{e.date.year}-{e.date.month:02}"
