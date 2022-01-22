@@ -12,6 +12,7 @@ from envelope_budget import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import compute_monthly_targets, EnvelopesWithGoals
 from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 
+
 def print_types(df, name):
     print(f"---- dataframe types: {name} ----")
     for row in df.iterrows():
@@ -25,7 +26,7 @@ class TestGoals(unittest.TestCase):
 
     def test_get_targets_integration(self):
         entries, errors, options_map = loader.load_file('/data/Documents/beancount/root_ledger.beancount')
-        module = BeancountEnvelope(entries, errors, options_map)
+        module = BeancountEnvelope(entries, errors, options_map, None)
         parser = TransactionParser(entries, errors, options_map,
                                    currency=module.currency,
                                    budget_accounts=module.budget_accounts,
@@ -36,7 +37,7 @@ class TestGoals(unittest.TestCase):
 
         detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings,
                                                        all_activity.index, envelope_tables, current_month)
-        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, envelope_tables)
+        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, envelope_tables, entries)
 
         months = targets.columns.get_level_values(level=0)
         monthly_target_months = monthly_target.columns.get_level_values(level=0)
@@ -79,7 +80,6 @@ class TestGoals(unittest.TestCase):
         self.assertIsInstance(tm['2021-02']['Expenses:IncomeTax'], numpy.float64)
         assert pd.isna(tm['2021-01']['Wishlist:Loungewear'])
         assert pd.isna(tm['2021-02']['Wishlist:Loungewear'])
-
 
     def test_monthly_targets_exist_if_line_has_zero_amount_budgeted(self):
         print("----------- Arrange ------------")

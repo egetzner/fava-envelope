@@ -372,8 +372,8 @@ class EnvelopeWrapper:
 
         bg = EnvelopesWithGoals(entries, errors, options, module.currency)
         detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings,
-                                                       all_activity.index, self.bucket_data, self.current_month)
-        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, self.bucket_data)
+                                                       all_activity.index, self.bucket_data, self.current_month, module.target_entries)
+        targets, monthly_target = bg.get_targets(module.date_start, module.date_end, self.bucket_data, module.target_entries)
         self.all_targets = merge_all_targets({'sg': spending, 't': targets, 'tm': monthly_target})
 
         self.account_data = pd.concat({'activity': all_activity, 'goals': detail_goals}, axis=1).swaplevel(1, 0, axis=1)

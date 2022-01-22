@@ -32,7 +32,7 @@ class BeancountEnvelope:
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
         self.customentry = "envelope" + budget_postfix if budget_postfix else "envelope"
-        self.budget_accounts, self.mappings, max_date, self.income_accounts = self._find_envelop_settings()
+        self.budget_accounts, self.mappings, max_date, self.income_accounts, self.allocation_entries, self.target_entries = self._find_envelop_settings()
         self.show_real_accounts = show_real_accounts
 
         decimal_precison = '0.00'
@@ -67,25 +67,31 @@ class BeancountEnvelope:
         budget_accounts= []
         mappings = []
         income_accounts = []
+        target_entries = []
+        allocation_entries = []
 
         allocation_dates = set()
 
         for e in self.entries:
             if isinstance(e, Custom) and e.type == self.customentry:
-                if e.values[0].value == "budget account":
+                type = e.values[0].value
+                if type == "budget account":
                     budget_accounts.append(re.compile(e.values[1].value))
-                if e.values[0].value == "mapping":
+                elif type == "mapping":
                     map_set = (
                         re.compile(e.values[1].value),
                         e.values[2].value
                     )
                     mappings.append(map_set)
-                if e.values[0].value == "allocate":
+                elif type == "allocate":
                     allocation_dates.add(e.date)
-                if e.values[0].value == "currency":
+                    allocation_entries.append(e)
+                elif type == "currency":
                     self.currency = e.values[1].value
-                if e.values[0].value == "income account":
+                elif type == "income account":
                     income_accounts.append(re.compile(e.values[1].value))
+                elif type == "target" or type == "spending":
+                    target_entries.append(e)
 
         if len(allocation_dates) == 0:
             logging.warning("No envelope entries found")
@@ -97,7 +103,7 @@ class BeancountEnvelope:
             logging.warning('no budget accounts setup within given time range.')
             #self.errors.append(BudgetError(data.new_metadata("<fava-envelope>", 0), 'no budget accounts setup', None))
 
-        return budget_accounts, mappings, max_date, income_accounts
+        return budget_accounts, mappings, max_date, income_accounts, allocation_entries, target_entries
 
     def envelope_tables(self, entry_parser=None):
 
@@ -346,11 +352,8 @@ class BeancountEnvelope:
         return None
 
     def _calc_budget_budgeted(self):
-        rows = {}
-        for e in self.entries:
-            if isinstance(e, Custom) and e.type == self.customentry:
-                if e.values[0].value == "allocate":
-                    if self.date_start <= e.date <= self.date_end:
-                        month = f"{e.date.year}-{e.date.month:02}"
-                        bucket = e.values[1].value
-                        self.envelope_df.loc[bucket, (month, 'budgeted')] = Decimal(e.values[2].value)
+        for e in self.allocation_entries:
+            if self.date_start <= e.date <= self.date_end:
+                month = f"{e.date.year}-{e.date.month:02}"
+                bucket = e.values[1].value
+                self.envelope_df.loc[bucket, (month, 'budgeted')] = Decimal(e.values[2].value)

@@ -1,19 +1,24 @@
-from fava.core.budgets import parse_budgets, calculate_budget
+import datetime
+from collections import defaultdict
+from typing import List, Dict
 
 import pandas as pd
-from dateutil.relativedelta import relativedelta
-
-from beancount.core.number import Decimal
 from beancount.core import prices
 from beancount.core.data import Custom
+from beancount.core.number import Decimal
 from beancount.parser import options
+from dateutil.relativedelta import relativedelta
+from fava.core.budgets import parse_budgets, calculate_budget, Budget, BudgetDict, Interval as FavaInterval
 
-from envelope_budget.modules.goals import goal
+from envelope_budget.modules.goals import SpendingTarget, Target, BaseTarget, Interval as OwnInterval
+from envelope_budget.modules.goals.target_types import goal
+from envelope_budget.modules.goals.target_types.goal import CustomGoalTargetParser, EnvelopeGoalTargetParser, \
+    NeededForSpendingTargetParser
 from envelope_budget.modules.hierarchy.beancount_hierarchy import add_bucket_levels
 
 
 def _get_date_range(start, end):
-    return pd.date_range(start, end, freq='MS')#.to_pydatetime()
+    return pd.date_range(start, end, freq='MS')  # .to_pydatetime()
 
 
 def _date_to_string(x):
@@ -33,7 +38,8 @@ def compute_monthly_targets(available_envelopes, targets, remaining_months):
     remaining_months.columns = available.columns
     div_months = remaining_months.add(1)
 
-    shifted = targets.apply(pd.to_numeric, downcast='float').add(available.shift(periods=1, axis='columns').mul(-1), fill_value=0)
+    shifted = targets.apply(pd.to_numeric, downcast='float').add(available.shift(periods=1, axis='columns').mul(-1),
+                                                                 fill_value=0)
     target_monthly = shifted[shifted > 0].div(div_months[div_months > 0])
 
     return target_monthly
@@ -42,12 +48,40 @@ def compute_monthly_targets(available_envelopes, targets, remaining_months):
 def merge_all_targets(data):
     return pd.concat(data, axis=1).swaplevel(0, 1, axis=1).sort_index(axis=0).sort_index(axis=1).reindex(axis=1)
 
+
 def merge_dfs(dataframes):
     return pd.concat(dataframes, axis=1).swaplevel(0, 1, axis=1).reindex(axis=1)
+
 
 def compute_progress(target, ref_amount):
     target_df = merge_dfs({'amount': target, 'ref_amount': ref_amount.filter(target.index, axis=0)})
     return target_df.fillna(Decimal('0.00'))
+
+
+def interval_adapter(interval: OwnInterval) -> FavaInterval:
+    if interval == OwnInterval.DAY:
+        return FavaInterval.DAY
+    if interval == OwnInterval.WEEK:
+        return FavaInterval.WEEK
+    if interval == OwnInterval.MONTH:
+        return FavaInterval.MONTH
+    if interval == OwnInterval.QUARTER:
+        return FavaInterval.QUARTER
+    if interval == OwnInterval.YEAR:
+        return FavaInterval.YEAR
+
+
+def spending_to_fava_budget_adapter(spending_targets: List[BaseTarget]) -> BudgetDict:
+    budgets: BudgetDict = defaultdict(list)
+    for t in spending_targets:
+        b = Budget(account=t.account,
+                   date_start=t.start_date,
+                   number=t.amount.number,
+                   currency=t.amount.currency,
+                   period=interval_adapter(t.recur_interval))
+        budgets[b.account].append(b)
+    return budgets
+
 
 class EnvelopesWithGoals:
     def __init__(self, entries, errors, options_map, currency):
@@ -62,8 +96,9 @@ class EnvelopesWithGoals:
         decimal_precison = '0.00'
         self.Q = Decimal(decimal_precison)
 
-    def get_spending_goals(self, date_start, date_end, mappings, multi_level_index, envelopes, current_month):
-        goals_for_accounts = self.parse_fava_budget(date_start, date_end)
+    def get_spending_goals(self, date_start, date_end, mappings, multi_level_index, envelopes, current_month, entries=None):
+        entries = self.entries if entries is None else entries
+        goals_for_accounts = self.parse_spending_targets(date_start, date_end, entries)
         full_hierarchy = add_bucket_levels(goals_for_accounts, multi_level_index, mappings)
 
         # these are float64 (IF EMPTY)
@@ -74,15 +109,15 @@ class EnvelopesWithGoals:
         avail_som = available.add(spent.mul(-1), fill_value=0)
 
         ref_amount = pd.concat([avail_som.filter(items=[c for c in avail_som.columns if c <= current_month]),
-                            budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
+                                budgeted.filter(items=[c for c in budgeted.columns if c > current_month])], axis=1)
 
         spending_goals = compute_progress(full_hierarchy.groupby(level=0, axis=0).sum(numeric_only=False), ref_amount)
         spending_goals.name = 'spend'
         return full_hierarchy, spending_goals
 
-    def get_targets(self, date_start, date_end, envelopes):
+    def get_targets(self, date_start, date_end, envelopes, target_entries):
 
-        targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end)
+        targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end, target_entries)
         available = envelopes.xs(key='available', level=1, axis=1)
 
         targets_by_month = compute_monthly_targets(available, targets, rem_months)
@@ -100,9 +135,7 @@ class EnvelopesWithGoals:
         tm.name = 'target_m'
         return t.applymap(Decimal), tm.applymap(Decimal)
 
-    def parse_fava_budget(self, start_date, end_date):
-        custom = [e for e in self.entries if isinstance(e, Custom)]
-        budgets, errors = parse_budgets(custom)
+    def budget_to_dataframe(self, start_date, end_date, budgets):
         all_months_data = dict()
         dr = _get_date_range(start_date, end_date)
         for d in dr:
@@ -117,31 +150,43 @@ class EnvelopesWithGoals:
 
         return pd.DataFrame(all_months_data).sort_index()
 
-    def parse_budget_goals(self, start_date, end_date):
+    def parse_fava_budget(self, start_date, end_date):
+        custom = [e for e in self.entries if isinstance(e, Custom)]
+        budgets, errors = parse_budgets(custom)
+        return self.budget_to_dataframe(start_date, end_date, budgets)
+
+    def parse_spending_targets(self, start_date, end_date, target_entries):
+        parser = NeededForSpendingTargetParser()
+        targets = parser.parse_entries(target_entries)
+        budgets = spending_to_fava_budget_adapter(targets)
+        return self.budget_to_dataframe(start_date, end_date, budgets)
+
+    def parse_budget_goals(self, start_date, end_date, target_entries):
         dates = _get_date_range(start_date, end_date)
-        goals = goal.parse_goals(self.entries)
+        parser = EnvelopeGoalTargetParser()
+        targets = parser.parse_entries(target_entries)
 
         target_amounts = pd.DataFrame(columns=dates)
         monthly_targets = pd.DataFrame(columns=dates)
         months_remaining = pd.DataFrame(columns=dates)
 
-        for a in goals.keys():
-            for item in goals[a]:
-                if item.target:
-                    amount = item.target.number
-                    start = _date_to_string(item.start_date)
-                    end = _date_to_string(item.target_date) if item.target_date is not None else None
-                    target_amounts.loc[a, start:end] = amount
+        for item in targets:
+            a = item.account
+            if item.target:
+                amount = item.target.number
+                start = _date_to_string(item.start_date)
+                end = _date_to_string(item.target_date) if item.target_date is not None else None
+                target_amounts.loc[a, start:end] = amount
 
-                    if end is not None:
-                        mr = {r: _month_diff(r, item.target_date) for r in dates if item.start_date <= r <= item.target_date}
-                        if mr:
-                            months_remaining.loc[a, mr.keys()] = mr
-                elif item.monthly_target:
-                    amount = item.monthly_target.number
-                    start = _date_to_string(item.start_date)
-                    end = _date_to_string(item.target_date) if item.target_date is not None else None
-                    monthly_targets.loc[a, start:end] = amount
+                if end is not None:
+                    mr = {r: _month_diff(r, item.target_date) for r in dates if
+                          item.start_date <= r <= item.target_date}
+                    if mr:
+                        months_remaining.loc[a, mr.keys()] = mr
+            elif item.monthly_target:
+                amount = item.monthly_target.number
+                start = _date_to_string(item.start_date)
+                end = _date_to_string(item.target_date) if item.target_date is not None else None
+                monthly_targets.loc[a, start:end] = amount
 
         return target_amounts.dropna(axis=0, how='all'), months_remaining, monthly_targets
-
