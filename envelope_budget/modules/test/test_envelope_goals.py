@@ -19,25 +19,31 @@ class TargetFromEnvelopeGoalsTests(cmptest.TestCase):
             2011-01-01 open Assets:Checking
             2011-01-01 open Assets:Shared
             2011-01-01 open Expenses:Rent
+            2011-01-01 open Expenses:Gas
             2011-01-01 open Assets:EmergencyFund
             2011-01-01 open Expenses:Holiday
             
             2020-01-01 custom "envelope_private" "target" Assets:EmergencyFund 5000 EUR
             2020-01-01 custom "envelope_private" "target" Expenses:Holiday 150 EUR "by" 2020-12-15
             2020-01-01 custom "envelope_shared" "target" Expenses:Rent "monthly" 1000 EUR
+            2020-01-01 custom "envelope_shared" "target" Expenses:Gas "monthly" 30 EUR
+            
+            2020-01-01 * "Gas"
+              Assets:Checking -10 EUR
+              Expenses:Gas 10 EUR
             
         """)
         entries, errors, options_map = loader.load_string(input_text)
         self.assertFalse(errors)
 
         bg = EnvelopesWithGoals(entries, errors, options_map, 'EUR')
-        (df1, df2, df3) = bg.parse_budget_goals('2022-01-01', '2022-04-01', entries)
-        self.assertIsNotNone(df1)
+        (general_targets, df2, monthly_goals) = bg.parse_budget_goals('2022-01-01', '2022-04-01', entries)
+        self.assertIsNotNone(general_targets)
         self.assertIsNotNone(df2)  # TODO: Holiday goal is not reflected, maybe because we don't have a budget.
-        self.assertIsNotNone(df3)
-        print(df1)
+        self.assertIsNotNone(monthly_goals)
+        print(general_targets)
         print(df2)
-        print(df3)
+        print(monthly_goals)
 
     def test_target_new(self):
         input_text = textwrap.dedent("""
@@ -68,6 +74,37 @@ class TargetFromEnvelopeGoalsTests(cmptest.TestCase):
 
         self.assertEqual(3, len(targets))
         self.assertCountEqual([f'{x}' for x in expected],[f'{x}' for x in targets])
+
+    def test_target_monthly_builder_is_funded_even_if_money_spent(self):
+        input_text = textwrap.dedent("""
+
+            2011-01-01 open Assets:Checking
+            2011-01-01 open Assets:Shared
+            2011-01-01 open Expenses:Rent
+            2011-01-01 open Assets:EmergencyFund
+            2011-01-01 open Expenses:Holiday
+
+            2020-01-01 custom "envelope_private" "target" Assets:EmergencyFund 5000 EUR
+            2020-01-01 custom "envelope_private" "target" Expenses:Holiday 150 EUR "by" 2020-12-15
+            2020-01-01 custom "envelope_shared" "target" Expenses:Rent "monthly" 1000 EUR
+
+        """)
+        entries, errors, options_map = loader.load_string(input_text)
+        self.assertFalse(errors)
+
+        targetParser = EnvelopeGoalTargetParser()
+        targets = targetParser.parse_entries(entries)
+
+        expected = [Target(datetime.date(2020, 1, 1), 'Assets:EmergencyFund', Amount(D(5000), 'EUR')),
+                    Target(datetime.date(2020, 1, 1), 'Expenses:Rent', monthly_amount=Amount(D(1000), 'EUR')),
+                    Target(datetime.date(2020, 1, 1), 'Expenses:Holiday', Amount(D(150), 'EUR'),
+                           by_date=datetime.date(2020, 12, 15))]
+
+        for x in targets:
+            print(x)
+
+        self.assertEqual(3, len(targets))
+        self.assertCountEqual([f'{x}' for x in expected], [f'{x}' for x in targets])
 
 
 if __name__ == '__main__':

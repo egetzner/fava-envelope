@@ -24,7 +24,7 @@ from beancount.parser import options
 
 class BeancountEnvelope:
 
-    def __init__(self, entries, options_map,currency):
+    def __init__(self, entries, options_map, currency):
 
         self.entries = entries
         self.options_map = options_map

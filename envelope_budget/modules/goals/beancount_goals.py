@@ -83,6 +83,27 @@ def spending_to_fava_budget_adapter(spending_targets: List[BaseTarget]) -> Budge
     return budgets
 
 
+def get_targets(targets, rem_months, targets_monthly, envelopes):
+
+    #targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end, target_entries)
+    available = envelopes.xs(key='available', level=1, axis=1)
+
+    targets_by_month = compute_monthly_targets(available, targets, rem_months)
+    targets_monthly = targets_monthly.apply(pd.to_numeric, downcast='float')
+    targets_monthly.columns = targets_by_month.columns
+
+    targets_by_month = targets_by_month.add(targets_monthly, fill_value=0)
+    t = compute_progress(targets, available)
+    t.name = 'target'
+
+    budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
+    spent = envelopes.xs(key='activity', level=1, axis=1)
+
+    tm = compute_progress(targets_by_month, budgeted) #.add(spent, fill_value=0))
+    tm.name = 'target_m'
+    return t.applymap(Decimal), tm.applymap(Decimal)
+
+
 class EnvelopesWithGoals:
     def __init__(self, entries, errors, options_map, currency):
 
@@ -115,25 +136,6 @@ class EnvelopesWithGoals:
         spending_goals.name = 'spend'
         return full_hierarchy, spending_goals
 
-    def get_targets(self, date_start, date_end, envelopes, target_entries):
-
-        targets, rem_months, targets_monthly = self.parse_budget_goals(date_start, date_end, target_entries)
-        available = envelopes.xs(key='available', level=1, axis=1)
-
-        targets_by_month = compute_monthly_targets(available, targets, rem_months)
-        targets_monthly = targets_monthly.apply(pd.to_numeric, downcast='float')
-        targets_monthly.columns = targets_by_month.columns
-
-        targets_by_month = targets_by_month.add(targets_monthly, fill_value=0)
-        t = compute_progress(targets, available)
-        t.name = 'target'
-
-        budgeted = envelopes.xs(key='budgeted', level=1, axis=1)
-        spent = envelopes.xs(key='activity', level=1, axis=1)
-
-        tm = compute_progress(targets_by_month, budgeted.add(spent, fill_value=0))
-        tm.name = 'target_m'
-        return t.applymap(Decimal), tm.applymap(Decimal)
 
     def budget_to_dataframe(self, start_date, end_date, budgets):
         all_months_data = dict()
