@@ -62,13 +62,13 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 #               currency = values[1]
 
             module = BeancountEnvelope(
-                self.ledger.entries,
+                self.ledger.all_entries,
                 self.ledger.errors,
                 self.ledger.options, suffix,
                 start_date, future_months, future_rollover, show_real_accounts
             )
 
-            self.envelopes = EnvelopeWrapper(self.ledger.entries, self.ledger.errors, self.ledger.options, module)
+            self.envelopes = EnvelopeWrapper(self.ledger.all_entries, self.ledger.errors, self.ledger.options, module)
         except:
             self.ledger.errors.append(
                 LoadError(data.new_metadata("<fava-envelope-gen>", 0), traceback.format_exc(), None))

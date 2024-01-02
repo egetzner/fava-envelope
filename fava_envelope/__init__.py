@@ -16,7 +16,7 @@ class EnvelopeBudget(FavaExtensionBase):
     def generate_budget_df(self,currency):
         self.currency=currency
         module = BeancountEnvelope(
-            self.ledger.entries,
+            self.ledger.all_entries,
             self.ledger.options,
             self.currency
         )
