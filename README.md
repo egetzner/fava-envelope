@@ -6,6 +6,7 @@ A beancount fava extension to add a envelope budgeting capability to fava and be
 ![GitHub last commit](https://img.shields.io/github/last-commit/bryall/fava-envelope)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Run on Repl.it](https://repl.it/badge/github/bryall/fava-envelope)](https://repl.it/github/bryall/fava-envelope)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/polarmutex/fava-envelope/master.svg)](https://results.pre-commit.ci/latest/github/polarmutex/fava-envelope/master)
 
 ## Repl.it
 Click the repl.it link to be able to see the plugin in action
@@ -42,6 +43,13 @@ start date in the format <4 digit year>-<2 digit month>
 ```
 2020-01-01 custom "envelope" "start date" "2020-01"
 ```
+
+### Budget months ahead
+If you want to see future months (to budget ahead), set this parameter
+```
+2020-01-01 custom "envelope" "months ahead" "2"
+```
+The default is 0
 
 ## Set up Budget Accounts
 You will need to specify the Assets and Liabilities you want included in your budget (For example ignoring Investment accounts). you can use regular expression in these statements
