@@ -8,7 +8,7 @@ except ImportError:
 
 from beancount import loader
 
-from fava_envelope.modules.beancount_envelope import BeancountEnvelope
+from src.fava_envelope.modules.beancount_envelope import BeancountEnvelope
 
 def main():
     logging.basicConfig(level=logging.INFO,

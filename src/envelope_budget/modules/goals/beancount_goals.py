@@ -11,8 +11,8 @@ from dateutil.relativedelta import relativedelta
 from fava.core.budgets import parse_budgets, calculate_budget, Budget, BudgetDict, Interval as FavaInterval
 
 from envelope_budget.modules.goals import SpendingTarget, Target, BaseTarget, Interval as OwnInterval
-from envelope_budget.modules.goals.target_types import goal
-from envelope_budget.modules.goals.target_types.goal import CustomGoalTargetParser, EnvelopeGoalTargetParser, \
+from src.envelope_budget.modules.goals.target_types import goal
+from src.envelope_budget.modules.goals.target_types import CustomGoalTargetParser, EnvelopeGoalTargetParser, \
     NeededForSpendingTargetParser
 from envelope_budget.modules.hierarchy.beancount_hierarchy import add_bucket_levels
 

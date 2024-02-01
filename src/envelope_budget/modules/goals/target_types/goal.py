@@ -5,7 +5,7 @@ from beancount.core.amount import Amount
 from beancount.core.data import Custom, Entries
 
 from envelope_budget.modules.goals import Target, Interval, SpendingTarget
-from envelope_budget.modules.goals.target_types import TargetParser
+from src.envelope_budget.modules.goals.target_types import TargetParser
 
 NAME = 'goal'
 

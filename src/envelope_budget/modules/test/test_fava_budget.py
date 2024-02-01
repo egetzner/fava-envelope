@@ -12,8 +12,8 @@ from pandas._testing import assert_frame_equal
 
 from envelope_budget.modules.goals import Target, SpendingTarget
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals
-from envelope_budget.modules.goals.target_types.fava_budget import FavaBudgetTargetParser
-from envelope_budget.modules.goals.target_types.goal import EnvelopeGoalTargetParser, NeededForSpendingTargetParser
+from src.envelope_budget.modules.goals.target_types import FavaBudgetTargetParser
+from src.envelope_budget.modules.goals.target_types import EnvelopeGoalTargetParser, NeededForSpendingTargetParser
 
 
 class TargetFromFavaBudgetTests(cmptest.TestCase):

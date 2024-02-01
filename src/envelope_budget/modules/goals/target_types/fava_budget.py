@@ -1,7 +1,7 @@
 from beancount.core.data import Custom
 
 from fava.core.budgets import parse_budgets
-from envelope_budget.modules.goals.target_types import TargetParser
+from src.envelope_budget.modules.goals.target_types import TargetParser
 
 
 class FavaBudgetTargetParser(TargetParser):
