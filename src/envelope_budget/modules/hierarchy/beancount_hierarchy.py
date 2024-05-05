@@ -1,6 +1,5 @@
 
 import logging
-import traceback
 import pandas as pd
 
 from beancount.core import inventory, account

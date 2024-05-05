@@ -12,11 +12,11 @@ from fava.ext import FavaExtensionBase
 from beancount.core.number import Decimal
 from beancount.core import data
 
-from envelope_budget.modules.beancount_envelope import BeancountEnvelope
-from envelope_budget.modules.envelope_extension import EnvelopeWrapper, Target
-
 import collections
 import traceback
+
+from envelope_budget.modules.beancount_envelope import BeancountEnvelope
+from envelope_budget.modules.envelope_extension import EnvelopeWrapper, Target
 
 LoadError = collections.namedtuple('LoadError', 'source message entry')
 
@@ -24,7 +24,7 @@ LoadError = collections.namedtuple('LoadError', 'source message entry')
 class EnvelopeBudgetColor(FavaExtensionBase):
     '''
     '''
-    report_title = "YNAB Budget"
+    report_title = "YNAB"
 
     def __init__(self, ledger, config=None):
         super().__init__(ledger, config)

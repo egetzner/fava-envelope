@@ -1,6 +1,6 @@
-import argparse
 import logging
 import unittest
+import datetime as dt
 
 from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets, get_targets
@@ -15,17 +15,17 @@ except ImportError:
 from beancount import loader
 
 
-class MyTestCase(unittest.TestCase):
+class GoalTestCase(unittest.TestCase):
     def test_goals(self):
         logging.basicConfig(level=logging.INFO,
                             format='%(levelname)-8s: %(message)s')
-        parser = argparse.ArgumentParser(description="beancount_envelope")
-        parser.add_argument('filename', help='path to beancount journal file')
-        args = parser.parse_args()
+
+        filename = '../../../test/testdata/beancount.2021/root_ledger.beancount'
 
         # Read beancount input file
-        entries, errors, options_map = loader.load_file(args.filename)
-        module = BeancountEnvelope(entries, errors, options_map, budget_postfix='')
+        entries, errors, options_map = loader.load_file(filename)
+        module = BeancountEnvelope(entries, errors, options_map, budget_postfix='',
+                                   today=dt.date(2021, 10, 1))
         parser = TransactionParser(entries, errors, options_map,
                                    currency=module.currency,
                                    budget_accounts=module.budget_accounts,

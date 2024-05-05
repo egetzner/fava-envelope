@@ -1,0 +1,406 @@
+; required by the original fava-envelope plugin
+2021-10-01 custom "envelope" "start date" "2021-10"
+;2020-01-01 custom "envelope" "end date" "2020-12"
+
+2000-01-01 custom "fava-extension" "envelope_budget" "{
+   'start': '2021-10-01',
+   'future_months': 1,
+   'future_rollover': True,
+   'income_month': 0
+}"
+
+;include "envelope_2020.beancount"
+;include "budget.beancount"
+
+2020-01-01 custom "envelope" "budget account" "Assets:DADAT:*"
+2020-01-01 custom "envelope" "budget account" "Assets:IngDiBa:*"
+2020-01-01 custom "envelope" "budget account" "Assets:PayPal:*"
+2020-01-01 custom "envelope" "budget account" "Assets:Wallet:*"
+2020-01-01 custom "envelope" "budget account" "Assets:GooglePlay"
+2020-01-01 custom "envelope" "budget account" "Assets:Expenses:Shared*"
+2020-01-01 custom "envelope" "budget account" "Assets:Receivables:*"
+
+2020-01-01 custom "envelope" "budget account" "Assets:Insurance:*"
+2020-01-01 custom "envelope" "budget account" "Assets:Shared:*"
+
+2020-01-01 custom "envelope" "budget account" "Assets:RentContrib*"
+
+; Note: Liabilities are not supported, as expenses booked on liabilities would "fall through" the cracks currently
+2020-01-01 custom "envelope" "budget account" "Liabilities:*"
+;2020-01-01 custom "envelope" "mapping" "Liabilities:SharedRent*" "Liabilities:Housing"
+;2020-01-01 custom "envelope" "mapping" "Liabilities:Dominic*" "Liabilities:Dominic"
+;2020-01-01 custom "envelope" "mapping" "Liabilities:*" "Liabilities:Other"
+
+2020-01-01 custom "envelope" "mapping" "Assets:Flatex:*" "Savings:Investments"
+
+2020-01-01 custom "envelope" "budget account" "Assets:Anadi:*"
+2020-01-01 custom "envelope" "budget account" "Assets:Addiko:Savings"
+2020-01-01 custom "envelope" "budget account" "Assets:Addiko:EmergencyFund"
+
+2020-01-01 custom "envelope" "budget account" "Assets:Renault:*"
+2020-01-01 custom "envelope" "mapping" "Assets:Renault:Savings" "Savings:Retirement"
+
+2020-01-01 custom "envelope" "mapping" "Assets:Addiko:Festgeld" "Savings:Retirement"
+;2020-01-01 custom "envelope" "mapping" "Assets:Anadi:Savings" "Savings:Retirement"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Electronics:Phone" "Expenses:SinkingFund:NewPhone"
+
+2021-01-01 custom "envelope" "mapping" "Income:Dominic:Shared" "Expenses:Shared:Monthly:Housing"
+;2020-01-01 custom "envelope" "mapping" "Income:*" "Income"
+
+1988-01-01 custom "envelope" "mapping" "Assets:Current:Electricity" "Expenses:Shared:Monthly:Housing"
+1988-01-01 custom "envelope" "mapping" "Expenses:Bills:MobilePhone" "Expenses:CostOfLiving:Phone"
+1988-01-01 custom "envelope" "mapping" "Expenses:Bills*" "Expenses:Shared:Monthly:Bills"
+2021-01-01 custom "envelope" "mapping" "Expenses:Car" "Expenses:Shared:Yearly:Car"
+
+; TODO: rewire these?
+2020-01-01 custom "envelope" "mapping" "Expenses:Savings:Depot" "Savings:Investments"
+2020-01-01 custom "envelope" "mapping" "Expenses:Savings:Longterm*" "Savings:Retirement"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Food:Groceries" "Expenses:Shared:Monthly:Groceries"
+2020-01-01 custom "envelope" "mapping" "Expenses:Food:*" "Expenses:FunMoney:EatingOut"
+2020-01-01 custom "envelope" "mapping" "Expenses:Health:Therapy" "Expenses:CostOfLiving:Therapy"
+2021-01-01 custom "envelope" "mapping" "Expenses:Health:*" "Expenses:SinkingFund:MedicalCosts"
+2020-01-01 custom "envelope" "mapping" "Expenses:Shopping:*" "Expenses:FunMoney:Shopping"
+2020-01-01 custom "envelope" "mapping" "Expenses:Fun:*" "Expenses:FunMoney:Fun"
+2020-01-01 custom "envelope" "mapping" "Expenses:Travel:*" "Expenses:FunMoney:Travel"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Giving:Charity" "Expenses:Giving:Donations"
+2020-01-01 custom "envelope" "mapping" "Expenses:Giving:HolidaySpending" "Expenses:Giving:Holidays"
+2020-01-01 custom "envelope" "mapping" "Expenses:Giving:*" "Expenses:Giving:GiftsAndInvitations"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Taxes:Church" "Expenses:CostOfLiving:Church"
+2020-01-01 custom "envelope" "mapping" "Expenses:Insurance:Household" "Expenses:Shared:Monthly:Housing"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Insurance:Health" "Expenses:CostOfLiving:HealthInsurance"
+;2020-01-01 custom "envelope" "mapping" "Expenses:Insurance:Life" "Income"
+2020-01-01 custom "envelope" "mapping" "Expenses:Taxes:Income"  "Expenses:CostOfLiving:IncomeTax"
+;2020-01-01 custom "envelope" "mapping" "Expenses:Taxes:Capital" "Income"
+
+2020-01-01 custom "envelope" "mapping" "Expenses:Housing:Moving" "Expenses:Shared:SinkingFund:Moving"
+2020-01-01 custom "envelope" "mapping" "Expenses:Housing:Furnishing" "Expenses:Shared:SinkingFund:Furnishing"
+2020-01-01 custom "envelope" "mapping" "Expenses:Housing:Appliances" "Expenses:Shared:SinkingFund:Appliances"
+2020-01-01 custom "envelope" "mapping" "Expenses:Housing:*" "Expenses:Shared:Monthly:Housing"
+2020-01-01 custom "envelope" "mapping" "Expenses:PersonalCare:*" "Expenses:CostOfLiving:Body"
+2020-01-01 custom "envelope" "mapping" "Expenses:Transportation:Bicycle" "Expenses:SinkingFund:BicycleRepairs"
+2020-01-01 custom "envelope" "mapping" "Expenses:Transportation:*" "Expenses:CostOfLiving:PublicTransport"
+2020-01-01 custom "envelope" "mapping" "Expenses:Misc:*" "Expenses:CostOfLiving:Misc"
+
+2021-01-01 custom "envelope" "mapping" "Expenses:Profession:Job*" "Expenses:SinkingFund:JobHunting"
+
+
+;2020-12-31 custom "envelope" "allocate" "Savings:Windfalls" -8000
+
+** 2021
+2021-01-01 custom "envelope" "allocate" "Savings:EmergencyFund" 8000
+
+** 2021-01
+
+2021-01-01 custom "envelope" "allocate" "Savings:IncomeReplacement" 2393
+2021-01-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 21.87+1.53
+
+2021-01-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 350
+2021-01-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-01-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 45
+2021-01-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 45+43 ; Schere
+2021-01-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 1.30
+2021-01-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 220+5
+2021-01-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 40-2.69-5
+
+2021-01-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 50+150 ; EReader
+2021-01-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 75
+2021-01-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 75-45
+2021-01-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 30+180-50 ; Armed Angels Pulli zum Lockdown Ende
+
+2021-01-01 custom "envelope" "allocate" Expenses:Giving:Donations 25
+2021-01-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 55.50
+2021-01-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-01-01 custom "envelope" "allocate" "Savings:Investments" 595.96
+2021-01-01 custom "envelope" "allocate" "Savings:Retirement" 8000+700+72-455.99+500+2750 ; Festgeld returned
+2021-01-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11+111.11 ; vom Vorjahr
+
+2021-01-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" 30.77-1.91+0.03
+
+
+** 2021-02x
+2021-02-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+
+2021-02-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 500
+2021-02-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-02-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 55+25
+2021-02-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 45
+2021-02-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 10
+2021-02-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 250
+2021-02-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 10
+
+
+2021-02-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 50  ; Birthday! do something nice
+2021-02-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 75
+2021-02-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 35-10.77
+
+2021-02-01 custom "envelope" "allocate" Expenses:Giving:Donations 20
+2021-02-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 0
+2021-02-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-02-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-02-01 custom "envelope" "allocate" "Savings:Retirement" 500
+2021-02-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+
+2021-02-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" 2.46+33
+
+
+** 2021-03
+2021-03-01 custom "envelope" "allocate" "Savings:IncomeReplacement" 0.5 ;2393.5+115 ; leftover from the finanzamt
+2021-03-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+
+2021-03-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 500
+2021-03-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-03-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 45
+2021-03-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 10
+2021-03-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 200
+2021-03-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc -20
+
+2021-03-01 custom "envelope" "allocate" Expenses:FunMoney:Fun -50
+2021-03-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 75
+2021-03-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 0
+2021-03-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 0
+
+2021-03-01 custom "envelope" "allocate" Expenses:Giving:Donations 20
+2021-03-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 0
+2021-03-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-03-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-03-01 custom "envelope" "allocate" "Savings:Retirement" 500
+2021-03-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+
+2021-03-01 custom "envelope" "allocate" "Expenses:SinkingFund:BicycleRepairs" 100
+2021-03-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 200+20
+2021-03-01 custom "envelope" "allocate" "Expenses:SinkingFund:Dentist" 200
+
+2021-03-01 custom "envelope" "allocate" "WishFarm:KitchenAid" 150
+2021-03-01 custom "envelope" "allocate" "WishFarm:HadestownBroadway" 30
+
+** 2021-04
+;2021-04-27 custom "envelope" "allocate" "Savings:IncomeReplacement" 2393.5
+
+2021-04-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+2021-04-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 500+250 ; KitchenAid
+2021-04-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-04-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 26
+2021-04-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 50
+2021-04-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 10
+2021-04-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 200
+2021-04-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 10
+
+2021-04-01 custom "envelope" "allocate" Expenses:Giving:Donations 20
+2021-04-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 30
+2021-04-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-04-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-04-01 custom "envelope" "allocate" "Savings:Retirement" 500.34
+2021-04-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+
+2021-04-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" 100
+
+2021-04-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 30+2.91
+2021-04-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 75
+2021-04-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 50
+2021-04-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 50
+
+2021-04-01 custom "envelope" "allocate" "WishFarm:KitchenAid" 100-250
+2021-04-01 custom "envelope" "allocate" "Expenses:SinkingFund:Dentist" 100
+2021-04-30 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 70
+
+** 2021-05 MAY
+
+2021-05-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+2021-05-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 200 ; Versicherung
+2021-05-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-05-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 26
+2021-05-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 150
+
+2021-05-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 3.98
+2021-05-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc -21
+
+2021-05-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 120
+2021-05-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 25
+2021-05-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 0
+2021-05-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut -15
+
+2021-05-01 custom "envelope" "allocate" "Savings:Investments" 900 ; ETF EM
+2021-05-01 custom "envelope" "allocate" "Savings:Retirement" 300
+2021-05-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+2021-05-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" 400
+
+2021-05-01 custom "envelope" "allocate" "WishFarm:HadestownBroadway" -30
+2021-05-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" 100
+
+2021-05-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 10
+2021-05-01 custom "envelope" "allocate" "Expenses:SinkingFund:JobHunting" 76
+
+** 2021-06 JUNE
+2021-06-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+2021-06-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 60+400 ; Versicherung
+2021-06-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-06-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 26
+2021-06-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 200
+2021-06-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 5
+
+2021-06-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 10
+2021-06-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 5
+
+2021-06-01 custom "envelope" "allocate" Expenses:Giving:Donations 13
+2021-06-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 45
+2021-06-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-06-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 100+40+48.71 ; Sandra's Junggesellinnenabschied
+2021-06-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 30
+2021-06-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping -20
+2021-06-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 30+20
+
+2021-06-01 custom "envelope" "allocate" "Savings:Investments" 700 ; ETF EM
+2021-06-01 custom "envelope" "allocate" "Savings:Retirement" 500
+2021-06-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+2021-06-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" 2500
+
+2021-06-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 25
+
+2021-06-25 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" 500
+
+** 2021-07 JULY
+
+2021-07-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+2021-07-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 450-15
+2021-07-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-07-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 26-13.20
+2021-07-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 190-95.87
+2021-07-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 14+100-35.59 ; Massage
+
+2021-07-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 20 ; Schnuppertage etc.
+2021-07-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 5-1.77
+
+2021-07-01 custom "envelope" "allocate" Expenses:Giving:Donations 13
+2021-07-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 45
+2021-07-01 custom "envelope" "allocate" Expenses:Giving:Holidays 20
+
+2021-07-01 custom "envelope" "allocate" Expenses:FunMoney:Fun -79
+2021-07-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 75+76+75-2.94 ; Pass, Beerdigung Nana
+2021-07-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping -9
+2021-07-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 55+45-4.47
+
+2021-07-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-07-01 custom "envelope" "allocate" "Savings:Retirement" 500+2500+34.93 ; GMC Money
+2021-07-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 111.11
+2021-07-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" 2100
+
+2021-07-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 25+14
+
+2021-07-01 custom "envelope" "allocate" "WishFarm:FarbStilberatung" 290
+
+** 2021-08 AUGUST      # UMZUG!
+
+2021-08-01 custom "envelope" "allocate" "Expenses:CostOfLiving:Church" 23.40
+2021-08-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 452
+2021-08-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-08-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 40
+2021-08-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 222
+2021-08-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 25.28
+2021-08-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 18
+
+2021-08-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 100-20 ; Mietauto nach Feldkirch (Umzug)
+2021-08-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 80
+2021-08-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 35+290 ; Farb- & Stilberatung
+2021-08-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 135+10
+
+2021-08-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 100
+
+2021-08-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-08-01 custom "envelope" "allocate" "Savings:Retirement" 500
+
+2021-08-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 20+30+50 ; Vitamin D fucking Expensive AF ; Arztbefund (GYN)
+
+2021-08-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" -500
+2021-08-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" 2000
+2021-08-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Appliances" 575 ; Waschmaschine
+2021-08-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:WashingMachine" -764.35
+
+2021-08-01 custom "envelope" "allocate" "WishFarm:FarbStilberatung" -290
+2021-08-01 custom "envelope" "allocate" "Expenses:SinkingFund:Dentist" -50
+
+2021-01-01 custom "envelope" "mapping" "Assets:SecurityDeposit" "Expenses:Shared:SinkingFund:SecurityDeposit"
+2021-08-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:SecurityDeposit" 2784
+
+2021-08-01 custom "envelope" "allocate" "Expenses:CostOfLiving:HealthInsurance" 40
+
+** 2021-09 SEPTEMBER  #umzug
+2021-09-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 35
+2021-09-01 custom "envelope" "allocate" Expenses:CostOfLiving:Church 23.40
+2021-09-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 1200
+2021-09-01 custom "envelope" "allocate" Expenses:Shared:Yearly:Car 600
+2021-09-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4
+2021-09-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 80
+2021-09-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 333
+2021-09-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 21+0.43
+2021-09-01 custom "envelope" "allocate" Expenses:FunMoney:Travel -75.10
+2021-09-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 31
+
+2021-09-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 390 ; Versicherung Rückkaufen
+
+2021-09-01 custom "envelope" "allocate" Expenses:FunMoney:Fun -48.51
+2021-09-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 436;+436
+2021-09-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut -5
+
+2021-09-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 100
+2021-09-01 custom "envelope" "allocate" Expenses:Giving:Donations -100
+
+2021-09-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-09-01 custom "envelope" "allocate" "Savings:Retirement" 500
+
+2021-09-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" -500
+2021-09-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Moving" -125.49
+2021-09-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Appliances" 30 ; Waschmaschine
+
+2021-09-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 0 ; Vitamin D fucking Expensive AF ; Arztbefund (GYN)
+2021-09-01 custom "envelope" "allocate" "Expenses:SinkingFund:BicycleRepairs" 45
+2021-09-01 custom "envelope" "allocate" "Expenses:SinkingFund:NewPhone" 261
+2021-09-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Seating" 578
+2021-09-01 custom "envelope" "allocate" "Expenses:SinkingFund:Dentist" -150
+
+2021-09-01 custom "envelope" "allocate" "Expenses:CostOfLiving:HealthInsurance" 321
+2021-09-15 custom "envelope" "allocate" "Expenses:CostOfLiving:IncomeTax" 500
+
+** 2021-10 OCTOBER
+2021-10-01 custom "envelope" "allocate" "Savings:IncomeReplacement" (-2393.5 +1943.5)
+2021-10-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Housing 1200
+2021-10-01 custom "envelope" "allocate" Expenses:CostOfLiving:Phone 4 +2.30 ; in case of roaming costs
+2021-10-01 custom "envelope" "allocate" Expenses:CostOfLiving:Church 23.40
+2021-10-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Bills 110
+2021-10-01 custom "envelope" "allocate" Expenses:Shared:Monthly:Groceries 444
+2021-10-01 custom "envelope" "allocate" Expenses:CostOfLiving:PublicTransport 9
+
+2021-10-01 custom "envelope" "allocate" "Expenses:CostOfLiving:HealthInsurance" 442
+2021-10-15 custom "envelope" "allocate" "Expenses:CostOfLiving:IncomeTax" 500+400+450
+
+2021-10-01 custom "envelope" "allocate" Expenses:Giving:Donations 11.54
+2021-10-01 custom "envelope" "allocate" Expenses:Giving:GiftsAndInvitations 50
+2021-10-01 custom "envelope" "allocate" Expenses:CostOfLiving:Body 28
+
+2021-10-01 custom "envelope" "allocate" Expenses:CostOfLiving:Misc 10+11.03
+
+2021-10-01 custom "envelope" "allocate" Expenses:FunMoney:Fun 25
+2021-10-01 custom "envelope" "allocate" Expenses:FunMoney:Shopping 75
+2021-10-01 custom "envelope" "allocate" Expenses:FunMoney:EatingOut 50
+2021-10-01 custom "envelope" "allocate" Expenses:FunMoney:Travel 75
+
+2021-10-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Appliances" 660; Kaution
+2021-10-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:Furnishing" 185
+2021-10-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:NextMonthsExpenses" 1600
+
+2021-10-01 custom "envelope" "allocate" "Expenses:SinkingFund:MedicalCosts" 17.30+21.17
+2021-10-01 custom "envelope" "allocate" "Expenses:Shared:SinkingFund:SecurityDeposit" -1500
+
+2021-10-01 custom "envelope" "allocate" "Savings:Investments" 700
+2021-10-01 custom "envelope" "allocate" "Expenses:Shared:Yearly:Car" 48.74
+
+2021-10-01 custom "envelopeCHF" "allocate" Expenses:FunMoney:EatingOut 50

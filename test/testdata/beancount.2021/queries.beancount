@@ -1,0 +1,128 @@
+* Queries
+
+2018-09-21 query "cashflow" "SELECT
+    date as quarter, root(account, 0) as Account, sum(number) as Total
+WHERE
+    account ~ 'Assets'
+GROUP BY quarter, Account
+ORDER BY quarter, Account DESC
+FLATTEN"
+
+2019-01-01 query "highly-rated" "select distinct description, position where account ~ 'Expenses' and description ~ '★★★★' order by date"
+
+2018-06-03 query "expenses" "SELECT month, account, sum(convert(cost(position),'EUR')) as total, 'EUR' as currency
+FROM year = 2018
+WHERE (account ~ 'Expenses|Income' and
+('Assets:Wallet:Cash' in other_accounts
+or 'Assets:Wallet:Eurest' in other_accounts
+or 'Assets:Wallet:GiftCards' in other_accounts
+or 'Assets:DADAT:Checking' in other_accounts
+or 'Assets:BankAustria:Checking' in other_accounts
+or 'Assets:PayPal' in other_accounts)) or ('T' in flag and (account = 'Assets:Flatex:Cash' or account ~ 'Assets:Addiko'))
+GROUP BY 1, 2, 4
+ORDER BY 1, 2"
+
+* Budget Queries
+
+2018-01-01 query "assets-as-expenses" "select month, 'Expenses:Savings:Depot' as account, sum(position) as total, 'EUR' as currency
+where year = 2018
+and 'T' in flag
+and not 'rebalancing' in links
+and account = 'Assets:Flatex:Cash'"
+
+
+2018-01-01 query "liquid" "SELECT units(sum(position)) as liquid_amount
+  WHERE account ~ 'Wallet' OR account ~ 'Checking' OR account ~ 'Anadi:Savings' OR account ~ 'IngDiBa'
+  GROUP BY cost_currency"
+
+
+;select links, sum(position) where account ~ 'Salary'
+
+2019-01-01 query "salary-by-year" "select links, sum(position) where account ~ 'Salary'"
+
+2019-01-01 query "top-expenses" "select account, position
+and account ~ 'Expenses:'
+order by position"
+
+2019-01-01 query "liabilities" "select ymonth(date), grep('Expenses:\w+(:\w+)?', joinstr(other_accounts)) as new_acc,  
+sum(position), getitem(open_meta(account),'tags') as tags,  
+getitem(open_meta(account),'type') as type,  account as lib  
+from year = 2018 and month = 12  
+where (account_sortkey(account) ~ '^1')  
+order by 1"
+
+2019-06-04 query "high-expenses" "select date, account, description, position
+where account ~ 'Expenses:' and not (account ~ 'Expenses:Housing:Rent') 
+and not 'Income:Avocodo:Salary' in other_accounts
+and not 'Income:OtherIncome:Allowance' in other_accounts
+and number(convert(position, 'EUR')) > 80
+and year = 2018
+order by 4 desc"
+
+2019-06-18 query "highexp2" "select date, account, convert(position,'EUR',date) as amount
+where number > 100
+AND account ~ 'Expenses:' 
+AND NOT ACCOUNT ~ 'Tax' 
+AND NOT ACCOUNT ~ 'Electricity' 
+and not account ~ 'Heating' 
+and not account ~ 'Insurance' 
+and not account ~ 'Rent' 
+and not account ~ 'Groceries' 
+and not account ~ 'Misc:Cash'
+order by 3 desc"
+
+2019-06-18 query "highexp3" "select date, account, description, tags, position
+where account ~ 'Expenses:' and not (account ~ 'Expenses:Housing:Rent' or account ~ 'Misc:Cash' or account ~ 'Taxes' or account ~ 'Electricity' or account ~ 'Insurance')
+and not 'Income:Avocodo:Salary' in other_accounts and not 'Income:OtherIncome:Allowance' in other_accounts 
+and (number(convert(position, 'EUR')) > 100)
+order by 5 desc"
+
+2019-06-16 query "with_tags" "select id, date, flag, payee, narration, account, tags,
+getitem(open_meta(account),'tags') as acc_tags, 
+getitem(open_meta(account),'type') as acc_type,
+convert(position,'EUR',date) as position 
+where account ~ 'Expenses|Income'"
+
+2020-03-01 query "health_without_therapy" "select year, sum(position)
+where account ~ 'Health' and not account ~ 'Therapy' and not account ~ 'Insurance'
+group by year"
+
+;1988-02-22 query "negative expenses" "select id, date, flag, payee, narration, account, position where account ~ 'Expenses:' and number < 0
+;order by year, number"
+
+1988-02-01 query "rent_by_month" "select subst('Liabilities:Dominic', 'Eli', subst('Assets:DADAT:Checking', 'Eli', subst('Assets:RentContrib:', '', account))) as who_paid, payee as to_whom, 
+ymonth(date) as when, 
+sum(position) as amount
+where 'rent20' in links and not 'balance' in links
+and (not 'Assets:RentContrib:Eli' = account or 'Assets:RentContrib:Dominic' = account)
+and (not 'Assets:Current:Electricity' = account) and not 'Liabilities:Ista' = account
+and number < 0
+order by 1, 2"
+
+1988-02-02 query "rent_by_year" "select  payee, subst('Liabilities:Dominic', 'Eli', subst('Assets:DADAT:Checking', 'Eli', subst('Assets:RentContrib:', '', account))) as who_paid,
+abs(sum(position)) as amount
+where 'rent20' in links and not 'balance' in links
+and (not 'Assets:RentContrib:Eli' = account or 'Assets:RentContrib:Dominic' = account)
+and (not 'Assets:Current:Electricity' = account) and not 'Liabilities:Ista' = account
+and number < 0
+order by 2, 3"
+
+2021-10-25 query "simple_rent_20" "select  payee, account, abs(sum(position)) as amount
+where 'rent20' in links and not 'balance' in links
+and account ~ 'Assets:'
+order by 1"
+
+2021-10-25 query "who_paid" "select account, subst('Assets:.*', 'Eli', subst('Assets:RentContrib:Dominic', 'Dominic', account)) as who_paid,  payee, sum(position) as amount
+where not 'balance' in links
+and account ~ 'Assets:'
+order by 2, 1"
+
+2021-10-25 query "who_paid_sum" "select subst('Assets:.*', 'Eli', subst('Assets:RentContrib:Dominic', 'Dominic', account)) as who_paid, sum(position) as amount
+where not 'balance' in links
+and account ~ 'Assets:'
+group by 1
+order by 2, 1"
+
+2021-10-26 query "total_rent" "select subst('.*rent([0-9]+).*', 'rent\1', joinstr(links)) as year, sum(position) as total_rent_expenses
+where (account ~ 'Expenses:' or account ~ 'Liabilities:DominicRent') and 'rent' in joinstr(links)
+group by 1"

@@ -9,7 +9,7 @@ from beancount.parser import cmptest
 
 from envelope_budget.modules.goals import Target
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals
-from src.envelope_budget.modules.goals.target_types import CustomGoalTargetParser
+from envelope_budget.modules.goals.target_types.goal import CustomGoalTargetParser
 
 
 class TargetFromCustomGoalTests(cmptest.TestCase):

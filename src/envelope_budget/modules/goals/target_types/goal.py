@@ -5,7 +5,7 @@ from beancount.core.amount import Amount
 from beancount.core.data import Custom, Entries
 
 from envelope_budget.modules.goals import Target, Interval, SpendingTarget
-from src.envelope_budget.modules.goals.target_types import TargetParser
+from envelope_budget.modules.goals.target_types import TargetParser
 
 NAME = 'goal'
 
@@ -76,6 +76,10 @@ class EnvelopeGoalTargetParser(TargetParser):
 
     def parse_entries(self, entries):
         targets = list()
+
+        if entries is None:
+            return targets
+
         for e in (e for e in entries if isinstance(e, Custom) and e.values[0].value == "target"):
             target = _get_budget_goal(e.date, _parse_goal_values(e.values[1:]))
             targets.append(target)

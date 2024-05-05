@@ -1,4 +1,3 @@
-import datetime
 from decimal import Decimal
 
 import numpy
@@ -7,6 +6,7 @@ from beancount import loader
 import unittest
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 from envelope_budget import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import compute_monthly_targets, EnvelopesWithGoals, get_targets
@@ -25,8 +25,10 @@ def print_types(df, name):
 class TestGoals(unittest.TestCase):
 
     def test_get_targets_integration(self):
-        entries, errors, options_map = loader.load_file('/data/Documents/beancount/root_ledger.beancount')
-        module = BeancountEnvelope(entries, errors, options_map, budget_postfix="_private")
+        entries, errors, options_map = (loader
+                                        .load_file('../../../../test/testdata/beancount.2022/root_ledger.beancount'))
+        module = BeancountEnvelope(entries, errors, options_map, budget_postfix="_private",
+                                   today=dt.date(2022,6,10))
         parser = TransactionParser(entries, errors, options_map,
                                    currency=module.currency,
                                    budget_accounts=module.budget_accounts,
@@ -213,4 +215,4 @@ class TestGoals(unittest.TestCase):
         print_types(tm, "tm")
         assert pd.isna(tm['2021-01']['Expenses:IncomeTax'])
         self.assertEqual(tm['2021-02']['Expenses:IncomeTax'], 3200)
-        self.assertIsInstance(tm['2021-02']['Expenses:IncomeTax'], numpy.float)
+        self.assertIsInstance(tm['2021-02']['Expenses:IncomeTax'], float)

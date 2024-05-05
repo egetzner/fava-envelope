@@ -22,17 +22,20 @@ from beancount.parser import options
 
 BudgetError = collections.namedtuple('BudgetError', 'source message entry')
 
+
 class BeancountEnvelope:
 
     def __init__(self, entries, errors, options_map, budget_postfix,
-                 start_date=None, future_months=1, future_rollover=True, show_real_accounts=True):
+                 start_date=None, future_months=1, future_rollover=True,
+                 show_real_accounts=True, today=None):
 
         self.entries = entries
         self.errors = errors
         self.options_map = options_map
         self.currency = self._find_currency(options_map)
         self.customentry = "envelope" + budget_postfix if budget_postfix else "envelope"
-        self.budget_accounts, self.mappings, max_date, self.income_accounts, self.allocation_entries, self.target_entries = self._find_envelop_settings()
+        (self.budget_accounts, self.mappings, max_date, self.income_accounts, self.allocation_entries,
+         self.target_entries) = self._find_envelop_settings()
         self.show_real_accounts = show_real_accounts
 
         decimal_precison = '0.00'
@@ -40,13 +43,12 @@ class BeancountEnvelope:
 
         # Compute start of period
         # TODO get start date from journal
-        today = datetime.date.today()
-        self.today = today
+        self.today = today if today is not None else datetime.date.today()
 
-        self.date_start = datetime.date(today.year, 1, 1) if start_date is None else start_date
+        self.date_start = datetime.date(self.today.year, 1, 1) if start_date is None else start_date
 
         # Compute end of period
-        max_date = today if max_date is None else max_date
+        max_date = self.today if max_date is None else max_date
         self.date_end = max_date + relativedelta(months=future_months)
         self.future_rollover = future_rollover
 
