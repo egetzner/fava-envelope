@@ -207,7 +207,7 @@ progress[value] {
 <div class="headerline">
     <h3>
         {% for b in budgets %}
-        <a href="{{ url_for('extension_report', report_name='EnvelopeBudgetColor', period=period, budget=b, show_accounts=show_accounts) }}">
+        <a href="{{ url_for('extension_report', extension_name='EnvelopeBudgetColor', period=period, budget=b, show_accounts=show_accounts) }}">
             Budget {{ b }}
         </a> |
         {% endfor %}
@@ -216,20 +216,20 @@ progress[value] {
 <div class="headerline">
     <div>
     <h3>
-      <a href="{{ url_for('extension_report', report_name='EnvelopeBudgetColor', period=extension._prev_month(), budget=budget, show_accounts=show_accounts) }}">&lt;&lt;</a> |
+      <a href="{{ url_for('extension_report', extension_name='EnvelopeBudgetColor', period=extension._prev_month(), budget=budget, show_accounts=show_accounts) }}">&lt;&lt;</a> |
         <span class="budget-header {{ 'is-current' if data.is_current else '' }}">{{extension.month_name(period)}}</span>
         {% if not data.is_current %}
-        <a href="{{ url_for('extension_report', report_name='EnvelopeBudgetColor', period=extension._period_for(today()),budget=budget, show_accounts=show_accounts) }}">(Go to current) </a>
+        <a href="{{ url_for('extension_report', extension_name='EnvelopeBudgetColor', period=extension._period_for(today()),budget=budget, show_accounts=show_accounts) }}">(Go to current) </a>
         {% endif %}
          |
-      <a href="{{ url_for('extension_report', report_name='EnvelopeBudgetColor', period=extension._next_month(),budget=budget, show_accounts=show_accounts) }}">&gt;&gt;</a>
+      <a href="{{ url_for('extension_report', extension_name='EnvelopeBudgetColor', period=extension._next_month(),budget=budget, show_accounts=show_accounts) }}">&gt;&gt;</a>
     </h3>
     </div>
     <div>
     {% if extension.display_real_accounts %}
-        <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for('extension_report', report_name='EnvelopeBudgetColor', period=period,budget=budget, show_accounts=False) }}';">Accounts</button>
+        <button type="button" title="Hide Real Accounts" onclick="location.href='{{  url_for('extension_report', extension_name='EnvelopeBudgetColor', period=period,budget=budget, show_accounts=False) }}';">Accounts</button>
     {% else %}
-        <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for('extension_report', report_name='EnvelopeBudgetColor', period=period,budget=budget, show_accounts=True) }}';">Accounts</button>
+        <button class="inactive" type="button" title="Show Real Accounts" onclick="location.href='{{  url_for('extension_report', extension_name='EnvelopeBudgetColor', period=period,budget=budget, show_accounts=True) }}';">Accounts</button>
     {% endif %}
     </div>
 </div>
@@ -277,7 +277,7 @@ progress[value] {
 
     <div class="headerline">
       {% for m in extension.get_budgets_months_available() %}
-      <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for('extension_report', report_name='EnvelopeBudgetColor', period=m,budget=budget, show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
+      <h3><b>{% if not (module == m) %}<a class="{{ 'budget-header' if m == period else 'month' }} {{ 'is-current' if extension.is_current(m) else '' }}" href="{{ url_for('extension_report', extension_name='EnvelopeBudgetColor', period=m,budget=budget, show_accounts=show_accounts) }}">{{ m }}</a>{% else %} {{ m }}{% endif %}</b></h3>
       {% endfor %}
     </div>
 
@@ -348,7 +348,7 @@ progress[value] {
             {% else %}
             <span class="num {{ 'has-balance' if budgeted else '' }}">
               <span class="balance {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
+                <a href="{{ url_for('report', extension_name='journal', time=period, show='custom') }}">
                   {{ extension.format_amount(budgeted) }}
                 </a>
               </span>
@@ -401,9 +401,9 @@ progress[value] {
                 </span>
            {% endif %}
       </p>
-    <ol>
-    {{ loop(extension._sort_subtree(account)) }}
-    </ol>
+        <ol>
+        {{ loop(extension._sort_subtree(account)) }}
+        </ol>
     </li>
     {% endfor %}
     </ol>

@@ -13,7 +13,7 @@ from .modules.beancount_envelope import BeancountEnvelope
 class EnvelopeBudget(FavaExtensionBase):
     """ """
 
-    report_title = "Envelope Budget"
+    report_title = "Envelope Budget (old)"
 
     def generate_budget_df(self, currency):
         self.currency = currency

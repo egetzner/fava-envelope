@@ -24,7 +24,7 @@ LoadError = collections.namedtuple('LoadError', 'source message entry')
 class EnvelopeBudgetColor(FavaExtensionBase):
     '''
     '''
-    report_title = "Envelope Budget*"
+    report_title = "YNAB Budget"
 
     def __init__(self, ledger, config=None):
         super().__init__(ledger, config)
@@ -112,7 +112,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
     def make_table(self, period, show_accounts, budget=None):
         self.ledger.errors = list(filter(lambda i: not (type(i) is LoadError), self.ledger.errors))
         try:
-            #logging.info(f"period: {period}, show accounts: {show_accounts}")
+            logging.info(f"period: {period}, show accounts: {show_accounts}")
             return self._make_table(period, show_accounts, budget)
         except:
             self.ledger.errors.append(

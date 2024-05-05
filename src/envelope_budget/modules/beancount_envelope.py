@@ -157,7 +157,6 @@ class BeancountEnvelope:
                     starting_balance += row[1]
 
         self.income_df[months[0]]["Avail Income"] += starting_balance
-
         self.envelope_df.fillna(Decimal(0.00), inplace=True)
 
         curr_month_index = months.index(self.current_month)
@@ -206,7 +205,7 @@ class BeancountEnvelope:
 
         remaining = self.income_df.sum(axis=0, numeric_only=False)
         shifted = remaining.shift(+1)
-        shifted[0] = starting_balance
+        shifted.iloc[0] = starting_balance
         income_df_detail.loc['Rollover Funds'] = shifted
 
         spent = self.income_df.filter(items=['Overspent', 'Budgeted'], axis=0).sum(axis=0, numeric_only=False)
