@@ -2,12 +2,15 @@
 """
 import logging
 
+from beancount.core.convert import get_cost
 from beancount.core.number import ZERO
 from beancount.core.inventory import Inventory, Amount
 from beancount.core import convert
 
 import datetime
 
+from fava.core import cost_or_value
+from fava.core.tree import TreeNode
 from fava.ext import FavaExtensionBase
 from beancount.core.number import Decimal
 from beancount.core import data
@@ -59,7 +62,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
             if budget and budget in budgets:
                 values = budgets[budget]
                 suffix = values[0]
-#               currency = values[1]
+            #               currency = values[1]
 
             module = BeancountEnvelope(
                 self.ledger.all_entries,
@@ -104,7 +107,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         if st is None:
             return types, []
 
-        return types, [{'Name': x[0], 'Amount': x[1]} for x in st.get_table().iteritems()]
+        return types, [{'Name': x[0], 'Amount': x[1]} for x in st.get_table().items()]
 
     # ----
 
@@ -134,7 +137,8 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         self.period_start = datetime.date(year, month, 1)
         self.period_end = datetime.date(year + month // 12, month % 12 + 1, 1)
 
-        self.period_data = self.envelopes.get_inventories(period=period, include_real_accounts=self.display_real_accounts)
+        self.period_data = self.envelopes.get_inventories(period=period,
+                                                          include_real_accounts=self.display_real_accounts)
         return self.period_data, period, budget
 
     def format_signed(self, value, show_if_zero=True):
@@ -178,7 +182,7 @@ class EnvelopeBudgetColor(FavaExtensionBase):
     def _only_position(self, inventory):
         if inventory is None or inventory.is_empty():
             return Amount(ZERO, "EUR")
-        currency ,= inventory.currencies()
+        currency, = inventory.currencies()
         #currency = 'EUR'
         amount: Amount = inventory.get_currency_units(currency)
         return amount
@@ -231,3 +235,50 @@ class EnvelopeBudgetColor(FavaExtensionBase):
         if start.day == 1 and end.day == 1 and (end - start).days in range(28, 32):
             return start.strftime('%b %Y')
         return f'{start} - {end}'
+
+    def should_show(self, account: TreeNode) -> bool:
+        """Determine whether the account should be shown."""
+        from fava.context import g
+        if not account.balance_children.is_empty() or any(
+                self.should_show(a) for a in account.children
+        ):
+            return True
+        ledger = g.ledger
+        filtered = g.filtered
+        if account.name not in ledger.accounts:
+            return False
+        fava_options = ledger.fava_options
+        if not fava_options.show_closed_accounts and filtered.account_is_closed(
+                account.name,
+        ):
+            return False
+        if (
+                not fava_options.show_accounts_with_zero_balance
+                and account.balance.is_empty()
+        ):
+            return False
+        if (
+                not fava_options.show_accounts_with_zero_transactions
+                and not account.has_txns
+        ):
+            return False
+        return True
+
+    def collapse_account(self, account_name: str) -> bool:
+        """Return true if account should be collapsed."""
+        from fava.context import g
+        collapse_patterns = g.ledger.fava_options.collapse_pattern
+        return any(pattern.match(account_name) for pattern in collapse_patterns)
+
+    def cost(self, inventory):
+        """Get the cost of an inventory."""
+        return inventory.reduce(get_cost)
+
+    def cost_or_value(
+            self,
+            inventory,
+            date = None,
+    ):
+        """Get the cost or value of an inventory."""
+        from fava.context import g
+        return cost_or_value(inventory, g.conversion, g.ledger.prices, date)
