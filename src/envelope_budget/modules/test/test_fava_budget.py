@@ -6,14 +6,12 @@ from beancount import loader
 from beancount.core.amount import Amount
 from beancount.core.number import D
 from beancount.parser import cmptest
-from fava.core.budgets import Budget
 from fava.util.date import Interval
 from pandas._testing import assert_frame_equal
 
 from envelope_budget.modules.goals import Target, SpendingTarget
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals
-from src.envelope_budget.modules.goals.target_types import FavaBudgetTargetParser
-from src.envelope_budget.modules.goals.target_types import EnvelopeGoalTargetParser, NeededForSpendingTargetParser
+from envelope_budget.modules.goals.target_types.goal import NeededForSpendingTargetParser
 
 
 class TargetFromFavaBudgetTests(cmptest.TestCase):

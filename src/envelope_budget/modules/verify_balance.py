@@ -17,6 +17,7 @@ from beancount import loader
 
 from src.fava_envelope.modules.beancount_envelope import BeancountEnvelope
 
+
 def main():
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-8s: %(message)s')

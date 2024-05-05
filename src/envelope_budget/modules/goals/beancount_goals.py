@@ -1,6 +1,6 @@
 import datetime
 from collections import defaultdict
-from typing import List, Dict
+from typing import List
 
 import pandas as pd
 from beancount.core import prices
@@ -10,10 +10,8 @@ from beancount.parser import options
 from dateutil.relativedelta import relativedelta
 from fava.core.budgets import parse_budgets, calculate_budget, Budget, BudgetDict, Interval as FavaInterval
 
-from envelope_budget.modules.goals import SpendingTarget, Target, BaseTarget, Interval as OwnInterval
-from src.envelope_budget.modules.goals.target_types import goal
-from src.envelope_budget.modules.goals.target_types import CustomGoalTargetParser, EnvelopeGoalTargetParser, \
-    NeededForSpendingTargetParser
+from envelope_budget.modules.goals import BaseTarget, Interval as OwnInterval
+from envelope_budget.modules.goals.target_types.goal import NeededForSpendingTargetParser, EnvelopeGoalTargetParser
 from envelope_budget.modules.hierarchy.beancount_hierarchy import add_bucket_levels
 
 
@@ -25,7 +23,7 @@ def _date_to_string(x):
     return f"{x.year}-{str(x.month).zfill(2)}"
 
 
-def _month_diff(start_date, end_date):
+def _month_diff(start_date: datetime.date, end_date: datetime.date):
     if end_date is None or start_date is None:
         return 0
     else:
@@ -147,7 +145,11 @@ class EnvelopesWithGoals:
             for be in budgets:
                 # note: calculate_budget_children would also include the sub-categories, which is not what we want here
                 cb = calculate_budget(budgets, be, start, end)
-                values[be] = cb[self.currency].quantize(self.Q)
+                if self.currency in cb:
+                    values[be] = cb[self.currency].quantize(self.Q)
+                else:
+                    # TODO EG: show a warning at least?
+                    print(f"WARNING: could not calculate budget for: {be} ({start} - {end})")
             all_months_data[_date_to_string(d)] = values
 
         return pd.DataFrame(all_months_data).sort_index()
@@ -182,7 +184,7 @@ class EnvelopesWithGoals:
 
                 if end is not None:
                     mr = {r: _month_diff(r, item.target_date) for r in dates if
-                          item.start_date <= r <= item.target_date}
+                          item.start_date <= r.date() <= item.target_date}
                     if mr:
                         months_remaining.loc[a, mr.keys()] = mr
             elif item.monthly_target:

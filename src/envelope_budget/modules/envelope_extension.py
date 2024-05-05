@@ -10,10 +10,10 @@ from collections import defaultdict as ddict
 
 from dateutil.relativedelta import relativedelta
 
-from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 from envelope_budget.modules.beancount_envelope import BeancountEnvelope
-from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets, get_targets
+from envelope_budget.modules.hierarchy.beancount_entries import TransactionParser
 from envelope_budget.modules.hierarchy.beancount_hierarchy import Bucket, get_hierarchy, get_level_as_dict
+from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets, get_targets
 
 
 def _add_amount(inventory, value, currency='EUR'):
@@ -371,9 +371,11 @@ class EnvelopeWrapper:
 
         bg = EnvelopesWithGoals(entries, errors, options, module.currency)
         detail_goals, spending = bg.get_spending_goals(module.date_start, module.date_end, module.mappings,
-                                                       all_activity.index, self.bucket_data, self.current_month, module.target_entries)
+                                                       all_activity.index, self.bucket_data, self.current_month,
+                                                       module.target_entries)
 
-        targets, rem_months, targets_monthly = bg.parse_budget_goals(module.date_start, module.date_end, module.target_entries)
+        targets, rem_months, targets_monthly = bg.parse_budget_goals(module.date_start, module.date_end,
+                                                                     module.target_entries)
         targets, monthly_target = get_targets(targets, rem_months, targets_monthly, self.bucket_data)
         self.all_targets = merge_all_targets({'sg': spending, 't': targets, 'tm': monthly_target})
 

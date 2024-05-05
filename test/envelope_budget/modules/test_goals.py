@@ -1,6 +1,8 @@
-import argparse
 import logging
 import unittest
+import datetime as dt
+import decimal
+import os
 
 from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets, get_targets
@@ -14,18 +16,22 @@ except ImportError:
 
 from beancount import loader
 
+dirname = os.path.dirname(__file__)
 
-class MyTestCase(unittest.TestCase):
+class GoalTestCase(unittest.TestCase):
     def test_goals(self):
         logging.basicConfig(level=logging.INFO,
                             format='%(levelname)-8s: %(message)s')
-        parser = argparse.ArgumentParser(description="beancount_envelope")
-        parser.add_argument('filename', help='path to beancount journal file')
-        args = parser.parse_args()
+
+        filename = os.path.join(dirname, '../../testdata/beancount.2021/root_ledger.beancount')
 
         # Read beancount input file
-        entries, errors, options_map = loader.load_file(args.filename)
-        module = BeancountEnvelope(entries, errors, options_map, budget_postfix='')
+        entries, errors, options_map = loader.load_file(filename)
+
+        self.assertGreater(len(entries), 0)
+
+        module = BeancountEnvelope(entries, errors, options_map, budget_postfix='',
+                                   today=dt.date(2021, 10, 1))
         parser = TransactionParser(entries, errors, options_map,
                                    currency=module.currency,
                                    budget_accounts=module.budget_accounts,
@@ -39,6 +45,11 @@ class MyTestCase(unittest.TestCase):
         targets, rem_months, targets_monthly = bg.parse_budget_goals(module.date_start, module.date_end, entries)
         targets, monthly_target = get_targets(targets, rem_months, targets_monthly, envelope_tables)
         merged = merge_all_targets({'needed for spending': spending, 'saving balance': targets, 'monthly savings builder': monthly_target})
+
+        fun_money = envelope_tables.loc['Expenses:FunMoney:EatingOut', '2021-10']
+        self.assertAlmostEqual(-25, fun_money['activity'])
+        self.assertAlmostEqual(50, fun_money['budgeted'])
+        self.assertAlmostEqual(decimal.Decimal(191.08), fun_money['available'])
 
         logging.info(envelope_tables.loc[:, '2021-10'].to_string())
         logging.info(merged.loc[:, '2021-10'].to_string())

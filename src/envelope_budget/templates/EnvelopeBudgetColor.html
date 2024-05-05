@@ -299,7 +299,7 @@ progress[value] {
     {% set ns = namespace(rown=1) %}
     {% for account in data.accounts if extension._is_visible(account) recursive %}
     {% set ns.rown = 1 if extension._has_children(account) else 1 - ns.rown %}
-    <li{{ ' class=toggled' if account.account|collapse_account else '' }}>
+    <li{{ ' class=toggled' if extension.collapse_account(account.name) else '' }}>
       <p class="row-{{ns.rown}}
          {{- ' group-row' if extension._has_children(account) else '' -}}"
          {%- if loop.depth0 == 0 %} style="margin-top: 10px;"{% endif %}>
@@ -348,7 +348,7 @@ progress[value] {
             {% else %}
             <span class="num {{ 'has-balance' if budgeted else '' }}">
               <span class="balance {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-                <a href="{{ url_for('report', extension_name='journal', time=period, show='custom') }}">
+                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
                   {{ extension.format_amount(budgeted) }}
                 </a>
               </span>
