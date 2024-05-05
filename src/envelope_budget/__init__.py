@@ -80,7 +80,6 @@ class EnvelopeBudgetColor(FavaExtensionBase):
 
         return []
 
-
     def is_current(self, period):
         return self.envelopes.current_month == period
 
