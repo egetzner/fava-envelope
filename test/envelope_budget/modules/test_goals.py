@@ -2,6 +2,7 @@ import logging
 import unittest
 import datetime as dt
 import decimal
+import os
 
 from envelope_budget.modules.beancount_envelope import BeancountEnvelope
 from envelope_budget.modules.goals.beancount_goals import EnvelopesWithGoals, merge_all_targets, get_targets
@@ -15,16 +16,20 @@ except ImportError:
 
 from beancount import loader
 
+dirname = os.path.dirname(__file__)
 
 class GoalTestCase(unittest.TestCase):
     def test_goals(self):
         logging.basicConfig(level=logging.INFO,
                             format='%(levelname)-8s: %(message)s')
 
-        filename = '../../../test/testdata/beancount.2021/root_ledger.beancount'
+        filename = os.path.join(dirname, '../../testdata/beancount.2021/root_ledger.beancount')
 
         # Read beancount input file
         entries, errors, options_map = loader.load_file(filename)
+
+        self.assertGreater(len(entries), 0)
+
         module = BeancountEnvelope(entries, errors, options_map, budget_postfix='',
                                    today=dt.date(2021, 10, 1))
         parser = TransactionParser(entries, errors, options_map,

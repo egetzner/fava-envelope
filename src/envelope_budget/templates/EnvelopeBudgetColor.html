@@ -348,7 +348,7 @@ progress[value] {
             {% else %}
             <span class="num {{ 'has-balance' if budgeted else '' }}">
               <span class="balance {{ 'negative' if budgeted.number < 0 else 'positive' if budgeted.number > 0 else '' }}">
-                <a href="{{ url_for('report', extension_name='journal', time=period, show='custom') }}">
+                <a href="{{ url_for('report', report_name='journal', time=period, show='custom') }}">
                   {{ extension.format_amount(budgeted) }}
                 </a>
               </span>
