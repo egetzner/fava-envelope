@@ -1,0 +1,458 @@
+2000-01-01 custom "fava-extension" "envelope_budget" "{
+   'budgets': {'default': ('_private', 'EUR'), 'shared': ('_share', 'EUR'), 'CHF': ('CHF', 'CHF')},
+   'start': '2022-01-01',
+   'future_months': 1,
+   'future_rollover': True,
+   'income_month': 0
+}"
+
+2000-01-01 custom "fava-extension" "fava_envelope" "{
+    'currencies': ['EUR', 'CHF'],
+    'budgets': {'default': ('_private', 'EUR'), 'shared': ('_share', 'EUR'), 'CHF': ('CHF', 'CHF')}
+}"
+
+; required by the original fava-envelope plugin
+2021-09-01 custom "envelope" "start date" "2021-10" ; Here that is not the case... all money at the time of the start date is considered.
+2021-09-01 custom "envelopeEUR" "start date" "2021-10"
+2021-09-01 custom "envelopeEUR" "currency" "EUR"
+
+
+** CHF Account Setup
+
+2021-09-01 custom "envelopeCHF" "start date" "2022-01"
+2021-09-01 custom "envelopeCHF" "currency" "CHF"
+2020-01-01 custom "envelopeCHF" "budget account" "Assets:Sparkasse:CHF"
+2020-01-01 custom "envelopeCHF" "budget account" "Assets:Cash:Foreign"
+2020-01-01 custom "envelopeCHF" "mapping" "Assets:Sparkasse:EUR" "Expenses:Regular"
+2021-01-01 custom "envelopeCHF" "mapping" "Expenses:Misc:FinancialExpenses" "Expenses:Financial"
+
+** Private Account Setup
+
+2021-09-01 custom "envelope_private" "start date" "2022-01"
+2021-09-01 custom "envelope_private" "currency" "EUR"
+2020-01-01 custom "envelope_private" "budget account" "Assets:Checking:*"
+2020-01-01 custom "envelope_private" "budget account" "Assets:Sparkasse:EUR"
+2020-01-01 custom "envelope_private" "budget account" "Assets:Cash:Wallet"
+2020-01-01 custom "envelope_private" "budget account" "Assets:Savings:Renault*"
+2022-01-01 custom "envelope_private" "budget account" "Assets:ToBeDivided"
+
+;2020-01-01 custom "envelope_private" "budget account" "Assets:Investments:Flatex:Cash*"
+2020-01-01 custom "envelope_private" "income account" "Assets:Sparkasse:CHF"
+;2021-01-01 custom "envelope_private" "budget account" "Assets:Installments:Taxes:*"
+
+*** Mappings
+2020-01-01 custom "envelope_private" "income account" "Liabilities:Shared*" ;"Shared:Liabilities"
+2020-01-01 custom "envelope_private" "income account" "Assets:Receivables*" ;"Shared:Liabilities"
+;2020-01-01 custom "envelope_private" "income account" "Liabilities:Debtors:Dominic*" ;"Shared:Liabilities"
+2020-01-01 custom "envelope_private" "mapping" "Liabilities:*" "Liabilities"
+
+2020-01-01 custom "envelope_private" "mapping" "Assets:Shared:Cash:Urlaubskassa" "SinkingFund:Vacations"
+2020-01-01 custom "envelope_private" "mapping" "Assets:Shared:*" "Expenses:Household"
+
+2020-01-01 custom "envelope_private" "mapping" "Assets:Installments:Taxes*" "TrueExpenses:IncomeTax"
+2020-01-01 custom "envelope_private" "mapping" "Assets:Investments:*" "Savings:Investments"
+2020-01-01 custom "envelope_private" "mapping" "Assets:Savings:*" "Savings:Longterm"
+2020-01-01 custom "envelope_private" "mapping" "Assets:*" "Savings:OtherAssets"
+
+2020-01-01 custom "envelope_private" "mapping" "Expenses:Fun:*" "Expenses:Fun"
+2020-01-01 custom "envelope_private" "mapping" "Expenses:Bills:GIS" "SinkingFund:Bills:GIS"
+2020-01-01 custom "envelope_private" "mapping" "Expenses:Bills:*" "Expenses:Bills"
+2020-01-01 custom "envelope_private" "mapping" "Expenses:Housing:Electricity" "Expenses:Bills"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Housing:Appliances" "SinkingFund:Appliances"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Housing:Furnishing" "SinkingFund:Furnishing"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Housing:*" "Expenses:Housing"
+
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Car:*" "Expenses:Transportation"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Food:Groceries" "Expenses:Groceries"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Food:*" "Expenses:DiningOut"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Transportation" "Expenses:Transportation"
+
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Giving:*" "Expenses:Giving"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:PersonalCare:Period" "Expenses:Shopping"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Health:Therapy" "Expenses:PersonalGrowth"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:PersonalCare:*" "Expenses:Meatbag"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Health*" "Expenses:Meatbag"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Shopping:*" "Expenses:Shopping"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Misc:Other" "Expenses:Shopping"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Insurance:*" "Expenses:Insurance"
+2022-01-01 custom "envelope_private" "mapping" "Expenses:Profession*" "Expenses:PersonalGrowth"
+
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Misc:Postage" "Expenses:Postage"
+
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Misc:FinancialExpenses" "Expenses:Financial"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Taxes:Church" "Expenses:Church"
+2021-01-01 custom "envelope_private" "mapping" "Expenses:Taxes:*" "Expenses:Financial"
+
+2022-01-01 custom "envelope_private" "mapping" "Expenses:Travel*" "SinkingFund:Vacations"
+
+*** Targets
+
+**** Needed for Spending
+2021-09-01 custom "envelope_private" "spending" Expenses:Bills:MobilePhone          "monthly" 3.90 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:Insurance:Health           "monthly" 464.42 EUR
+2022-02-01 custom "envelope_private" "spending" Expenses:Insurance:ECard           "yearly" 12.95 EUR
+
+2023-01-01 custom "envelope_private" "spending" Expenses:Insurance:Health           "monthly" 478.82 EUR
+2023-12-01 custom "envelope_private" "spending" Expenses:Insurance:ECard           "yearly" 13 EUR
+
+;2021-09-01 custom "envelope_private" "spending" Expenses:Food:EatingOut           "monthly" 30 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:Giving:Gifts      "yearly" 350 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:PersonalCare:Body     "monthly" 15 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:PersonalCare:Hair     "quarterly" 50 EUR
+2022-01-01 custom "envelope_private" "spending" Expenses:Health:Pharmacy       "quarterly" 50 EUR
+2022-01-01 custom "envelope_private" "spending" Expenses:Health:Doctor       "yearly" 200 EUR
+2022-11-11 custom "envelope_private" "spending" Expenses:Health:Therapy       "weekly" 80 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:Misc:Postage              "yearly" 50 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:Shopping:Clothing         "yearly" 500 EUR
+2021-09-01 custom "envelope_private" "spending" Expenses:Shopping:SportingGoods    "yearly" 200 EUR
+
+2023-01-01 custom "envelope_private" "spending" Expenses:Transportation:BusTram       "monthly" 24 EUR ; preis einer monatskarte
+
+2021-10-01 custom "envelope_private" "spending" Assets:Investments:Flatex:Cash    "monthly" 700 EUR
+2023-01-01 custom "envelope_private" "spending" Assets:Investments:Flatex:Cash    "monthly" 0 EUR
+2023-04-01 custom "envelope_private" "spending" Assets:Investments:Flatex:Cash    "monthly" 700 EUR
+
+;2021-10-01 custom "envelope_private" "spending" "Savings:Investments"          "monthly" 700 EUR
+2022-02-01 custom "envelope_private" "spending" Assets:Shared:Checking        "monthly" 1100 EUR
+
+
+**** Builder Targets
+; every target is for spending (eventually)... or at least the monthly builder ones. we don't know when we might want to remove from there again. 
+
+2023-01-01 custom "envelope_private" "target" "TrueExpenses:NextMonth"                     3000 EUR
+
+;2021-09-01 custom "envelope_private" "target" "Expenses:Church"                 "monthly" 55.52/2 EUR ; we want this to build up... I think
+2021-11-15 custom "envelope_private" "target" "TrueExpenses:IncomeTax"                    3000 EUR "by" 2022-02-15
+
+;2021-10-01 custom "envelope_private" "spending" Assets:Savings:Renault             "monthly" 500 EUR ; spending if the bank account is not included.
+2022-01-01 custom "envelope_private" "target" "Savings:Longterm"            "monthly" 500 EUR
+2023-01-01 custom "envelope_private" "target" "Savings:Longterm"            "monthly" -3000 EUR
+
+2021-10-01 custom "envelope_private" "target" "Savings:EmergencyFund"                8000 EUR "by" 2022-07-01
+
+2022-01-01 custom "envelope_private" "target" "Expenses:DiningOut"  "monthly" 30 EUR
+2022-01-01 custom "envelope_private" "target" "Expenses:Fun"        "monthly" 25 EUR
+2022-01-01 custom "envelope_private" "target" "Expenses:Giving"     "monthly" 25 EUR
+2022-01-01 custom "envelope_private" "target" "Expenses:Meatbag"    "monthly" 50 EUR
+2023-01-01 custom "envelope_private" "target" "Expenses:Meatbag"    "monthly" 10 EUR
+
+2022-01-01 custom "envelope_private" "target" "Expenses:Shopping"   "monthly" 50 EUR
+2023-01-01 custom "envelope_private" "target" "Expenses:Shopping"   "monthly" 20 EUR
+
+
+**** Scheduled Transactions
+
+2022-01-01 # "spusu" "Handyrechnung [MONTHLY]"
+  Expenses:Bills:MobilePhone                           3.90 EUR
+  Assets:Sparkasse:EUR
+
+2022-01-01 # "OGK" "Krankenversicherung [MONTHLY]"
+  Expenses:Insurance:Health                          454.86 EUR
+  Assets:Sparkasse:EUR
+
+2023-12-15 # "OGK" "Service Entgeld [YEARLY]"
+  Expenses:Insurance:ECard                               13 EUR
+  Assets:Sparkasse:EUR
+
+2022-01-01 # "ETF World" "[MONTHLY UNTIL 2023-01-01]"
+  Assets:Investments:Flatex:Cash                        700 EUR
+  Assets:Sparkasse:EUR
+
+2022-05-15 # "ETF EM" "[MONTHLY SKIP 5 TIMES UNTIL 2023-01-01]"
+  Assets:Investments:Flatex:Cash                        756 EUR
+  Assets:Sparkasse:EUR
+
+2022-02-15 # "Finanzamt Feldkirch" "[MONTHLY SKIP 2 TIMES UNTIL 2023-01-01]"
+  Assets:Installments:Taxes:2022                       3000 EUR
+  Assets:Sparkasse:EUR
+
+* 2022
+** JANUARY
+
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Household" 850-30 ; took 30 from shared
+;2022-01-01 custom "envelope_private" "allocate" "Shared:Liabilities" 11 ; cover money lent to dominic (no longer available to assign)
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Church" 30
+2022-01-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Giving" 30
+2022-01-01 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 1000+500
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Insurance" 464.42+12.70 ; Servicegebühr
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 89-20+1.40
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Shopping" 55
+2022-01-01 custom "envelope_private" "allocate" "Expenses:Fun" 25
+
+2022-01-01 custom "envelope_private" "allocate" "Savings:EmergencyFund" +286+6000
+2022-01-01 custom "envelope_private" "allocate" "Savings:Investments" 7700
+2022-01-01 custom "envelope_private" "allocate" "Savings:Longterm" 65859.01-1500-6000+500-7000+700-78.84
+2022-01-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 3775-700
+
+2022-01-14 custom "envelope_private" "allocate" "Expenses:Postage" 5
+2022-01-01 custom "envelope_private" "allocate" "Savings:OtherAssets" -40
+
+** FEB
+2022-02-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" -3075
+2022-02-01 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 1000+500
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Church" 30
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.42
+2022-02-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30-50
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Fun" 25
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Giving" 30+30.21+100 ; Ukraine
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Shopping" 50-50
+
+2022-02-01 custom "envelope_private" "allocate" "Savings:Longterm" 500
+2022-02-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-02-01 custom "envelope_private" "allocate" "Savings:EmergencyFund" -2286
+
+2022-02-01 custom "envelope_private" "allocate" "Expenses:Household" 950
+;2022-02-01 custom "envelope_private" "allocate" "Shared:Liabilities" 65-55.60
+
+** MARCH
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Household" 980
+2022-03-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-03-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Fun" -25
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Giving" 70
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Shopping" 50
+2022-03-01 custom "envelope_private" "allocate" "Expenses:Church" 30
+
+2022-03-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" 150
+2022-03-01 custom "envelope_private" "allocate" "Wishlist:BalconyPlants" 100
+
+2022-03-15 custom "envelope_private" "allocate" "Savings:EmergencyFund" 800
+2022-03-15 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 3000
+2022-03-15 custom "envelope_private" "allocate" "Savings:Longterm" 500
+2022-03-15 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 1000
+
+2022-03-15 custom "envelope_private" "allocate" "Expenses:Financial" 34
+
+** APRIL
+2022-04-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" -1300
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Household" 950+500
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-04-15 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 500-400
+
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Church" 30
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Giving" 25
+2022-04-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Fun" 25
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50+50
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Shopping" 50-50
+2022-04-01 custom "envelope_private" "allocate" "Expenses:Financial" 4.4
+
+2022-04-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-04-02 custom "envelope_private" "allocate" "Savings:EmergencyFund" -2000+500
+2022-04-02 custom "envelope_private" "allocate" "Savings:Longterm" 0
+2022-04-01 custom "envelope_private" "allocate" "Wishlist:BalconyPlants" -100
+
+** MAY
+2022-05-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 1700+400
+2022-05-07 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 1900
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Household" 950
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-05-07 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-05-07 custom "envelope_private" "allocate" "Expenses:Transportation" 10
+2022-05-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 100
+
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Church" 30+145.25
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Giving" 25
+2022-05-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Fun" -25
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50+22.34+6.91
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Shopping" 25
+2022-05-01 custom "envelope_private" "allocate" "Expenses:Financial" 10
+
+2022-05-07 custom "envelope_private" "allocate" "Savings:Investments" 700+756
+2022-05-07 custom "envelope_private" "allocate" "Savings:Longterm" -250
+2022-05-09 custom "envelope_private" "allocate" "Savings:EmergencyFund" 1500
+
+** JUNE
+;2022-06-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 3100
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Household" 950
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Transportation" 10
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Financial" 25
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50+25 ; OP
+
+2022-06-15 custom "envelope_private" "allocate" "Expenses:Shopping" 375
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Fun" 25+40.53-18
+2022-06-01 custom "envelope_private" "allocate" "Expenses:Giving" 25+40
+2022-06-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+
+2022-06-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-06-02 custom "envelope_private" "allocate" "Savings:EmergencyFund" 2600
+2022-06-02 custom "envelope_private" "allocate" "Savings:Longterm" 2500
+
+2022-06-01 custom "envelope_private" "allocate" "Wishlist:BalconyPlants" 250
+2022-06-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" 850
+2022-06-01 custom "envelope_private" "allocate" "Wishlist:Sheets" 150
+
+;2022-06-30 custom "envelope_private" "allocate" "Shared:Liabilities" 40.97
+
+** JULY
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Household" 950
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Transportation" 10
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Financial" 10
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50+25 ; OP
+2022-07-15 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 3000
+
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Shopping" 150+10+180
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Fun" 25.61
+2022-07-01 custom "envelope_private" "allocate" "Expenses:Giving" 25+40+15+100
+2022-07-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30+20
+
+2022-07-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-07-02 custom "envelope_private" "allocate" "Savings:EmergencyFund" 100+500
+2022-07-02 custom "envelope_private" "allocate" "Savings:Longterm" 10500
+
+2022-07-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" 1000
+2022-07-01 custom "envelope_private" "allocate" "Wishlist:Sheets" 50
+2022-07-01 custom "envelope_private" "allocate" "Wishlist:Hammock" 150
+
+*** AUGUST
+
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Household" 950+500
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Transportation" 10
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Financial" 10
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50
+
+2022-08-01 custom "envelope_private" "allocate" "Savings:Investments" 700+1500
+2022-08-02 custom "envelope_private" "allocate" "Savings:EmergencyFund" 1000
+2022-08-02 custom "envelope_private" "allocate" "Savings:Longterm" 5000
+
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Shopping" 150-20
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Fun" 50.17-20
+2022-08-01 custom "envelope_private" "allocate" "Expenses:Giving" 100
+2022-08-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+
+2022-08-01 custom "envelope_private" "allocate" "SinkingFund:Furnishing" 20+250+240
+2022-08-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" -760 ; Graz
+
+2022-08-01 custom "envelope_private" "allocate" "Wishlist:BalconyPlants" -50-200
+2022-08-01 custom "envelope_private" "allocate" "Wishlist:Hammock" 100-250
+2022-08-01 custom "envelope_private" "allocate" "Wishlist:Physio" 190
+
+** SEPTEMBER (last month @ INNOFORCE)
+
+2022-09-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" -3800
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Household" 950
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Transportation" 19.46
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Financial" 24 ; Kontoführungsgebühren
+2022-09-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 30
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50
+
+2022-09-01 custom "envelope_private" "allocate" "TrueExpenses:IncomeTax" 700
+
+2022-09-01 custom "envelope_private" "allocate" "Savings:Investments" 700+150
+2022-09-02 custom "envelope_private" "allocate" "Savings:EmergencyFund" 500
+2022-09-02 custom "envelope_private" "allocate" "Savings:Longterm" 500
+
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Shopping" 50
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Fun" 25
+2022-09-01 custom "envelope_private" "allocate" "Expenses:Giving" 25+150
+2022-09-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+
+2022-09-01 custom "envelope_private" "allocate" "SinkingFund:Furnishing" 10
+2022-09-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" -128.20
+2022-09-01 custom "envelope_private" "allocate" "Wishlist:Sabbatical" 100
+
+** OCTOBER (Self-Care October!)
+
+2022-10-01 custom "envelope_private" "allocate" "Savings:Longterm" -3000
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Household" 1000
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.90
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Transportation" 15 ; Last months transport expenses
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Financial" 15 ; Zinsen
+2022-10-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 100 ; Education
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50 ; Self-Care October!
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Shopping" 50
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Fun" 25
+2022-10-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-10-01 custom "envelope_private" "allocate" "Expenses:Giving" 200 ; Anna Geburtstag
+
+2022-10-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 1050
+
+** NOVEMBER (Healing November)
+2022-11-01 custom "envelope_private" "allocate" "Savings:Longterm" -3000
+
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Household" 1000
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Bills" 10 ; Telefoning to Liechtenstein
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.52
+
+2022-11-01 custom "envelope_private" "allocate" "Savings:Investments" 656
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Transportation" 30
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Financial" 15 ; Zinsen
+
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50 ; Self-Care October!
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Shopping" -250
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Fun" 55
+2022-11-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2022-11-01 custom "envelope_private" "allocate" "Expenses:Giving" 25
+2022-11-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" -100 ; Education
+
+2022-11-01 custom "envelope_private" "allocate" "SinkingFund:Furnishing" 15
+2022-11-01 custom "envelope_private" "allocate" "SinkingFund:Vacations" -300
+2022-11-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 100.79
+2022-11-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" 1000
+
+** DECEMBER (Mindful December)
+
+2022-12-01 custom "envelope_private" "allocate" "Savings:Longterm" -3000
+
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Household" 1000+850
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Bills" 4-2.49
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Insurance" 465.53+0.95
+
+2022-12-01 custom "envelope_private" "allocate" "Savings:Investments" 700
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Transportation" 11
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Financial" 23.27+22 ; Konto, KESt
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Groceries" 20+5.58-3.68 ; Gelegenheitseinkäufe
+
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 50
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Shopping" 100+17.05
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Fun" 55+15+11
+2022-12-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 43
+2022-12-01 custom "envelope_private" "allocate" "Expenses:Giving" 200
+
+2022-12-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 240 ; Therapy Costs 
+2022-12-01 custom "envelope_private" "allocate" "SinkingFund:Furnishing" 30
+2022-12-01 custom "envelope_private" "allocate" "Wishlist:MusicalRebecca" 100
+2022-12-01 custom "envelope_private" "allocate" "Wishlist:CostumeAusten" 190+38
+
+2022-12-01 custom "envelope_private" "allocate" "Liabilities" -304.5
+
+* 2023
+** JANUAR
+
+2023-01-01 custom "envelope_private" "allocate" "Savings:Longterm" -3000
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Bills" 3.9
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Household" 1100+25 ; Sunscreen etc.
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Insurance" 479.92
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Financial" 60 ; Mahngebühren FA
+
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Meatbag" 10+50 ; Anticipating future doctor visits
+2023-01-01 custom "envelope_private" "allocate" "Expenses:DiningOut" 30
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Fun" 25+3.42
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Giving" 25
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Shopping" 25+16 ; Jane Austen Costume
+2023-01-01 custom "envelope_private" "allocate" "Expenses:Transportation" 24 + 25
+
+2023-01-01 custom "envelope_private" "allocate" "Expenses:PersonalGrowth" 360 ; Therapy Costs 
+
+2023-01-01 custom "envelope_private" "allocate" "TrueExpenses:NextMonth" -50
+  
+2023-01-01 custom "envelope_private" "allocate" "Wishlist:Sabbatical" 30
+

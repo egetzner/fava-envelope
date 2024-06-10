@@ -1,0 +1,544 @@
+* Shared Envelope Budget
+
+** Account setup
+
+2021-09-01 custom "envelope_share" "start date" "2022-01"
+2021-09-01 custom "envelope_share" "currency" "EUR"
+2020-01-01 custom "envelope_share" "budget account" "Assets:Shared:*"
+2020-01-01 custom "envelope_share" "budget account" "Assets:Wallet:Netflix"
+2020-01-01 custom "envelope_share" "budget account" "Assets:Installments:Helvetia"
+2020-01-01 custom "envelope_share" "mapping" "Expenses:Insurance:Household" "SinkingFund:Bills:HouseholdInsurance"
+;2020-01-01 custom "envelope_share" "mapping" "Assets:Installments:Helvetia" "SinkingFund:Bills:HouseholdInsurance"
+;2020-01-01 custom "envelope_share" "mapping" "Assets:Wallet:Netflix" "Expenses:Fun:Netflix"
+2020-01-01 custom "envelope_share" "mapping" "Liabilities:Shared:*" "Liabilities"
+
+2020-01-01 custom "envelope_share" "income account" "Equity:Shared:Partner"
+2020-01-01 custom "envelope_share" "income account" "Assets:Checking:DADAT"
+2020-01-01 custom "envelope_share" "income account" "Assets:Sparkasse:EUR"
+2020-01-01 custom "envelope_share" "income account" "Assets:Cash:Wallet"
+
+2020-01-01 custom "envelope_share" "income account" "Assets:Receivables*"
+
+** Mappings
+
+2020-01-01 custom "envelope_share" "mapping" "Expenses:Bills:GIS" "SinkingFund:Bills:GIS"
+2020-01-01 custom "envelope_share" "mapping" "Expenses:Bills:VPN" "SinkingFund:Bills:VPN"
+2020-01-01 custom "envelope_share" "mapping" "Expenses:Bills:*" "Expenses:Bills"
+2020-01-01 custom "envelope_share" "mapping" "Expenses:Housing:Electricity" "Expenses:Bills"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Housing:Appliances" "SinkingFund:Housing:Maintenance"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Housing:Furnishing" "SinkingFund:Housing:Furnishing"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Housing:*" "Expenses:Living"
+
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Food:Groceries" "Expenses:Groceries"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Car:Tolls" "SinkingFund:Car:Vignette"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Car:Insurance" "SinkingFund:Car:Insurance"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Car:Service" "SinkingFund:Car:Service"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Car:*" "Expenses:Car"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Giving:*" "Expenses:Giving"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Transportation:Parking" "Expenses:Car"
+
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Travel:*" "SinkingFund:Vacation"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Fun:*" "Expenses:QualityOfLife"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Food:*" "Expenses:QualityOfLife"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:PersonalCare:*" "Expenses:Hygiene"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Health*" "Expenses:Hygiene"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Shopping:*" "Expenses:QualityOfLife"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Transportation:Taxi" "Expenses:QualityOfLife"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Misc:*" "Expenses:Misc"
+
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Insurance:*" "Expenses:Insurance"
+2021-01-01 custom "envelope_share" "mapping" "Expenses:Taxes:Income" "Expenses:IncomeTax"
+
+
+** Targets and Scheduled Transactions
+
+*** Builder Targets
+
+*** Needed for Spending
+; let's budget our monthly expenses as we know them now. (after the move to FK)
+2021-09-01 custom "envelope_share" "spending" Expenses:Housing:Rent               "monthly" 928 EUR
+2021-09-01 custom "envelope_share" "spending" Expenses:Housing:Facilities         "monthly" 225 EUR
+
+2023-01-01 custom "envelope_share" "spending" Expenses:Housing:Rent               "monthly" 1017 EUR
+2023-01-01 custom "envelope_share" "spending" Expenses:Housing:Facilities         "monthly" 288.19+15.45 EUR
+
+;2021-09-01 custom "envelope_share" "spending" Expenses:Housing:Electricity        "monthly" 64.00 EUR
+2023-03-01 custom "envelope_share" "spending" Expenses:Housing:Electricity        "monthly" 47.00 EUR
+
+2021-09-01 custom "envelope_share" "spending" Expenses:Bills:Internet             "monthly" 31.99 EUR
+2022-11-01 custom "envelope_share" "spending" Expenses:Insurance:Accident         "monthly" 26.37 EUR
+2023-01-01 custom "envelope_share" "spending" Expenses:Insurance:Accident         "monthly" 27.07 EUR
+
+;2021-09-01 custom "envelope_share" "spending" Expenses:Car:Fuel          "monthly" 20 EUR
+2022-01-01 custom "envelope_share" "target" "Expenses:Car" "monthly" 10 EUR
+2021-09-01 custom "envelope_share" "spending" Expenses:Food:Groceries    "weekly" 120 EUR
+
+2021-09-01 custom "envelope_share" "spending" Expenses:Misc:Other "monthly" 50 EUR
+
+2022-01-01 custom "envelope_share" "target" "Expenses:Hygiene" "monthly" 10 EUR
+2022-01-01 custom "envelope_share" "target" "Expenses:QualityOfLife" "monthly" 50 EUR
+
+
+
+*** Building Targets
+2021-10-01 custom "envelope_share" "target" "SinkingFund:Furnishing:SittingGroup"   578 EUR "by" 2021-11-01 ; Wishlist Item, Lump Sum, non repeatable.
+
+2021-09-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     125.59 EUR "by" 2021-09-01
+2021-11-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     125.59 EUR "by" 2022-02-01 ; every 6 months ==> Scheduled Transaction?
+2022-04-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     136.21 EUR "by" 2022-09-01 ; every 6 months
+2022-10-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     134.69 EUR "by" 2023-02-01 ; every 6 months
+2023-03-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     134.69 EUR "by" 2023-09-01 ; every 6 months
+2023-10-01 custom "envelope_share" "target" "SinkingFund:Bills:GIS"     134.69 EUR "by" 2024-02-01 ; every 6 months
+2021-06-01 custom "envelope_share" "target" "SinkingFund:Bills:VPN"     120 EUR "by" 2022-05-01 ; every 3 years - Needed for spending 
+2022-06-01 custom "envelope_share" "target" "SinkingFund:Bills:VPN"      75 EUR "by" 2024-05-01
+
+2021-11-01 custom "envelope_share" "target" "SinkingFund:Bills:HouseholdInsurance" 115 EUR "by" 2022-09-01 ; yearly ==> Scheduled Transaction?
+2022-09-01 custom "envelope_share" "target" "SinkingFund:Bills:HouseholdInsurance" 122 EUR "by" 2023-09-01 ; yearly ==> Scheduled Transaction?
+2023-09-01 custom "envelope_share" "target" "SinkingFund:Bills:HouseholdInsurance" 122 EUR "by" 2024-09-01 ; yearly ==> Scheduled Transaction?
+
+; monthly savings builder (no target date, no fixed amount, just build up a fund.)
+2021-10-01 custom "envelope_share" "target" "SinkingFund:Housing:Maintenance"       "monthly" 30 EUR ; monthly savings builder
+2022-01-01 custom "envelope_share" "target" "SinkingFund:Housing:Furnishing"      300 EUR
+
+2022-01-01 custom "envelope_share" "target" "SinkingFund:Car:Vignette" 93.80 EUR "by" 2022-02-01
+2022-03-01 custom "envelope_share" "target" "SinkingFund:Car:Vignette" 96.4 EUR "by" 2023-01-01
+2023-02-01 custom "envelope_share" "target" "SinkingFund:Car:Vignette" 96.4 EUR "by" 2024-01-01
+
+2022-01-01 custom "envelope_share" "target" "SinkingFund:Car:Maintenance" "monthly" 10 EUR
+2022-02-01 custom "envelope_share" "target" "SinkingFund:Car:Insurance" 400 EUR "by" 2022-07-01
+2022-08-01 custom "envelope_share" "target" "SinkingFund:Car:Insurance" 440 EUR "by" 2023-07-01
+2023-08-01 custom "envelope_share" "target" "SinkingFund:Car:Insurance" 440 EUR "by" 2024-07-01
+2022-02-01 custom "envelope_share" "target" "SinkingFund:Car:Service" 150 EUR "by" 2022-07-01
+2022-08-01 custom "envelope_share" "target" "SinkingFund:Car:Service" 222 EUR "by" 2023-07-01
+2023-08-01 custom "envelope_share" "target" "SinkingFund:Car:Service" 222 EUR "by" 2024-07-01
+
+;2022-08-01 custom "envelope_share" "target" "Wishlist:Hängesessel" 130+330+30 EUR ; Comfort+Gestell+Kingsize Aufpreis https://www.lasiesta.com
+
+2022-02-01 custom "envelope_share" "target" "SinkingFund:NextMonth" 2000 EUR
+2022-12-01 custom "envelope_share" "target" "SinkingFund:Vacation" 400 EUR
+
+
+*** Scheduled Transactions
+
+2021-09-01 # "Mag. Irina Stenek" "Miete [MONTHLY UNTIL 2022-12-31]"
+  Expenses:Housing:Rent                                 928 EUR
+  Assets:Shared:Checking
+
+2021-10-16 # "immoplus" "Betriebskosten [MONTHLY UNTIL 2021-12-31]"
+  Expenses:Housing:Facilities                        224.57 EUR
+  Assets:Shared:Checking
+
+2021-10-01 # "Stadtwerke Feldkirch" "Strom + Müll [MONTHLY]"
+  Expenses:Housing:Electricity                           68 EUR
+  Assets:Shared:Checking
+
+2021-09-01 # "fonira" "Internet [MONTHLY]"
+  Expenses:Bills:Internet                             31.99 EUR
+  Assets:Shared:Checking
+
+2021-05-20 # "Netflix" "Standard Subscription [MONTHLY UNTIL 2021-12-01]"
+  Expenses:Fun:TV                                         8 EUR
+  Assets:Checking:DADAT
+
+2021-12-30 # "Netflix" "Basic Subscription [MONTHLY UNTIL 2022-04-02]"
+  Expenses:Fun:TV                                      7.99 EUR
+  Assets:Wallet:Netflix
+
+2022-09-01 # "Helvetia" "Haushaltsversicherung [YEARLY]"
+    Expenses:Insurance:Household                      122 EUR
+    Assets:Shared:Checking
+
+2022-01-01 # "immoplus" "Betriebskosten Wohnung [MONTHLY UNTIL 2022-12-31]"
+  Expenses:Housing:Rent:ServiceCost                  213.21 EUR
+  Assets:Shared:Checking
+
+2022-01-01 # "immoplus" "Betriebskosten Tiefgarage [MONTHLY UNTIL 2022-12-31]"
+  Expenses:Housing:Rent:ServiceCost                   11.36 EUR
+  Assets:Shared:Checking
+
+* The Budget
+
+** 2022
+
+*** JANUARY
+
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" 1700
+
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Groceries" 222+222-53.54
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Car" 20
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 60-6.25
+2022-01-01 custom "envelope_share" "allocate" "Expenses:Misc" 50
+2022-01-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 26.60
+
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 65
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 20
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 20
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 43+140 ; Wishlist regal rund
+
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 93.80
+
+*** FEBUARY
+
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -1700+1300
+
+2022-02-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-02-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-02-01 custom "envelope_share" "allocate" "Expenses:Groceries" 440
+2022-02-01 custom "envelope_share" "allocate" "Expenses:Car" 20+10
+2022-02-01 custom "envelope_share" "allocate" "Expenses:Misc" -50
+2022-02-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 46.60+40
+
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 61-20
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 20-40+8.65
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 12
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-02-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 300+132.89+30
+
+**** MARCH
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -1300+1300
+
+2022-03-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-03-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-03-01 custom "envelope_share" "allocate" "Expenses:Groceries" 435
+2022-03-01 custom "envelope_share" "allocate" "Expenses:Car" 20-20
+2022-03-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 21+64
+
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 30.21
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 0
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 0
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 9
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+2022-03-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 15.79
+
+**** APRIL
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" 600
+
+2022-04-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-04-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-04-01 custom "envelope_share" "allocate" "Expenses:Groceries" 450
+2022-04-01 custom "envelope_share" "allocate" "Expenses:Car" 20
+2022-04-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 97
+2022-04-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50
+
+
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 10
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 38
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 9
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30+50
+2022-04-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 177
+
+*** MAI
+
+2022-05-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-05-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-05-01 custom "envelope_share" "allocate" "Expenses:Groceries" 430+52
+2022-05-01 custom "envelope_share" "allocate" "Expenses:Car" 20+20
+2022-05-22 custom "envelope_share" "allocate" "Expenses:Giving" 17.62
+
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 5
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 30
+
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 9
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-05-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 205.10-76
+
+*** JUNI
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -150
+
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Groceries" 500+50
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Car" 30
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Giving" 8.5
+2022-06-01 custom "envelope_share" "allocate" "Expenses:Misc" 25
+
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 30.5
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 0
+
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 9
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+2022-06-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 5.15
+
+*** JULY
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -1100+950
+
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Groceries" 500+50
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Car" 30
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Giving" 8.75
+2022-07-01 custom "envelope_share" "allocate" "Expenses:Misc" 20
+
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 30.25
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 13.75
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.25
+
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 67+5
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" -60
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 25+65.6
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 9
+
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" -20
+2022-07-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 10
+
+*** AUGUST
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -1600+1000
+
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Groceries" 400
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Car" 30
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Giving" 150
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 50 ; FSME Impfungen
+2022-08-01 custom "envelope_share" "allocate" "Expenses:Misc" 7
+2022-08-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 200 ; Vacation expenses
+
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30+100 ; Geschirrspüler broken
+2022-08-02 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 450+50 ; Enjo Putzsachen
+
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 30.33
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.33
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 18.25
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.45
+
+2022-08-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 749.40-200
+2022-08-01 custom "envelope_share" "allocate" "Wishlist:BalconyImprovement" 69.09+90
+
+*** SEPTEMBER
+
+2022-09-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-09-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-09-01 custom "envelope_share" "allocate" "Expenses:Groceries" 500
+2022-09-01 custom "envelope_share" "allocate" "Expenses:Car" 30
+2022-09-01 custom "envelope_share" "allocate" "Expenses:Giving" 75
+2022-09-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 18.09
+
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 30.33
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.33
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 18.25
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.45
+
+2022-09-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" -27
+
+*** OKTOBER
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Bills" 100
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Insurance" 8.79
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Groceries" 460
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Car" 20
+2022-10-01 custom "envelope_share" "allocate" "Expenses:Giving" 50
+2022-10-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 40+3.63
+
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 27
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 18.25
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.30
+
+2022-10-01 custom "envelope_share" "allocate" "Wishlist:BalconyImprovement" -159.09
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 190 ; Enjo
+2022-10-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 45.20-220
+
+*** NOVEMBER
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -500
+
+2022-11-05 custom "envelope_share" "allocate" "Expenses:Bills" 31.99-230.39 ; Stromrechnung retour
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Groceries" 500
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Car" 20
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Giving" 10+50 ; Essenseinladungen Wien
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 30+5 ; Bath Salts, forgotten Tooth Brush etc.
+2022-11-01 custom "envelope_share" "allocate" "Expenses:Misc" 10
+2022-11-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50+25 ; Essen + Museen, Wien
+
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 27
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.30
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 150 ; Lampen
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-11-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 250
+
+*** DECEMBER
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" -150
+2022-12-05 custom "envelope_share" "allocate" "Expenses:Bills" 31.99+64 ; Stadtwerke neu
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Living" 1153
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Groceries" 415.50-133.47
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Car" 10-50
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Giving" 50-25-8.74 ; Weihnachten
+2022-12-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10+10
+2022-12-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50+18.6+20
+
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 27
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.96
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 160 ; Küchengläser
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2022-12-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 50+20
+
+
+** 2023
+*** JANUARY
+
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Bills" 31.99+64-0.10
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Car" 10
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Groceries" 531.43
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10 + 51
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27.07-1.26
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Living" 1320.64-5.16
+2023-01-01 custom "envelope_share" "allocate" "Expenses:Misc" 15
+2023-01-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50
+
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 27
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.95
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 0
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2023-01-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 0 ; 13.93+25.01
+
+
+*** FEB 02
+
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Bills" 31.99
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Car" 10
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Groceries" 531.43
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Giving" 7.15 ; Funken
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27.07
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Living" 1320.64
+2023-02-01 custom "envelope_share" "allocate" "Expenses:Misc" 0
+2023-02-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50
+
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 27
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.95
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 50 ; ENJO
+2023-02-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+*** MARCH 03
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Bills" 31.99 + 2
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Car" 10
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Groceries" 531.43-100
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Giving" 17
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10+2.21
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27.07
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Living" 1320.64
+2023-03-01 custom "envelope_share" "allocate" "Expenses:Misc" 0
+2023-03-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50
+  
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 20 
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.95
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 155 ; Balcony Pots + Plants
+2023-03-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+
+*** APRIL 04
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Bills" 78.99
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Car" 10
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Groceries" 514.29-150
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Giving" 10
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27.07
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Living" 1320.64
+2023-04-01 custom "envelope_share" "allocate" "Expenses:Misc" 0
+2023-04-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 50
+  
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 20 
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 14
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 3.16
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 36.55
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 20
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 8.95
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 150
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+  
+2023-04-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 29.14+7.21
+
+; BREAK 
+
+*** OKTOBER 10
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Bills" 78.99
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Car" 10
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Groceries" 531.43
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Giving" 10
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Hygiene" 10
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Insurance" 27.07
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Living" 1320.64
+2023-10-01 custom "envelope_share" "allocate" "Expenses:Misc" 0
+2023-10-01 custom "envelope_share" "allocate" "Expenses:QualityOfLife" 100
+
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:GIS" 36.50 
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:HouseholdInsurance" 7.37
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Bills:VPN" 5.12
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Insurance" 44
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Maintenance" 10
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Service" 22.2
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Car:Vignette" 17.39
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Furnishing" 150
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Housing:Maintenance" 30
+
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:NextMonth" 1650
+2023-10-01 custom "envelope_share" "allocate" "SinkingFund:Vacation" 500
